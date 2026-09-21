@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+
+# uploaded product images live on disk, not in git
+src/public/uploads/
+
+# encrypted exports must never be committed
+exports/
+*.age
+*.gpg
+
+# local database volume
+.pgdata/
+
+*.log
+.DS_Store
+Thumbs.db

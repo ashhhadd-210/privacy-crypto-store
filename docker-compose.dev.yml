@@ -1,0 +1,28 @@
+# Local development. Brings up Postgres only; the app runs on the host with
+# `npm run dev` so that file watching works properly on Windows.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#   npm run migrate
+#   npm run dev
+#
+# If Docker is not available on the dev machine, install PostgreSQL 16 natively
+# and point DATABASE_URL at it instead. Nothing in the application depends on
+# Docker; the container is a convenience, not a requirement.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: store
+      POSTGRES_USER: store
+      POSTGRES_PASSWORD: store
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./.pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U store -d store"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

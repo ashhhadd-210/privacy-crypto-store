@@ -1,0 +1,85 @@
+# Production stack for the VPS.
+#
+# BTCPay Server is deliberately NOT in this file. It ships its own multi-service
+# compose stack and is managed separately on the same box, so that updating the
+# shop never risks restarting a Bitcoin node mid-sync. See docs/RUNBOOK.md.
+#
+# Nothing here publishes a port to the public internet except Caddy, and the
+# host firewall only accepts 80/443 from Cloudflare's IP ranges.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-store}
+      POSTGRES_USER: ${POSTGRES_USER:-store}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-store} -d ${POSTGRES_DB:-store}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # no ports: the database is reachable only from the app container
+    networks: [internal]
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: /etc/davmad-store/app.env   # 600 root:root on the host, outside the repo
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/src/public/uploads
+      - exports:/app/exports
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks: [internal, edge]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro      # Cloudflare origin certificate
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+    networks: [edge]
+
+  # Retention purge. Runs on a schedule inside its own short-lived container so a
+  # hung purge can never take the storefront down with it.
+  purge:
+    build: .
+    restart: unless-stopped
+    env_file: /etc/davmad-store/app.env
+    command: ["node", "dist/../scripts/purge.js"]
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - exports:/app/exports
+    profiles: ["cron"]   # invoked by a systemd timer, not run continuously
+    networks: [internal]
+
+volumes:
+  pgdata:
+  uploads:
+  exports:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
+    internal: true    # no outbound route, db cannot phone home
+  edge:

@@ -1,0 +1,45 @@
+{
+  "name": "davmad-store",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Privacy-first storefront with BTCPay crypto checkout and enforced data retention.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "migrate": "tsx scripts/migrate.ts",
+    "purge": "tsx scripts/purge.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "audit:deps": "npm audit --omit=dev"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/csrf-protection": "^7.1.0",
+    "@fastify/formbody": "^8.0.2",
+    "@fastify/helmet": "^13.0.1",
+    "@fastify/multipart": "^9.0.3",
+    "@fastify/rate-limit": "^10.2.2",
+    "@fastify/static": "^10.1.4",
+    "@fastify/view": "^10.0.2",
+    "@node-rs/argon2": "^2.0.2",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "kysely": "^0.29.6",
+    "nunjucks": "^3.2.4",
+    "pg": "^8.13.1",
+    "pino": "^9.6.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/nunjucks": "^3.2.6",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
