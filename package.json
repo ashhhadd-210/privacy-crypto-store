@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "migrate": "tsx scripts/migrate.ts",
     "purge": "tsx scripts/purge.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",

@@ -1,0 +1,97 @@
+# Edge reverse proxy on the VPS. Cloudflare terminates TLS for the browser and
+# re-encrypts to this origin with an origin certificate (Full Strict), so the
+# certificate here is the Cloudflare origin cert, not an ACME one. The host
+# firewall only accepts 80/443 from Cloudflare's published ranges, so this
+# server should never see a direct client connection.
+#
+# SITE_DOMAIN is injected by docker-compose.yml from the deploy environment.
+
+{
+	admin off
+	# No ACME: the cert comes from Cloudflare. Nothing here talks to Let's Encrypt.
+	auto_https disable_redirects
+
+	servers {
+		# Client IPs arrive in CF-Connecting-IP / X-Forwarded-For. Without this,
+		# rate limiting and fail2ban would see Cloudflare's IP for every request
+		# and either ban the whole edge or nobody.
+		#
+		# Keep this list in sync with https://www.cloudflare.com/ips/ (the same
+		# list the UFW rules use). Refresh it whenever the firewall rules are
+		# refreshed; both are in the runbook.
+		trusted_proxies static \
+			173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 \
+			141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 \
+			197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 \
+			104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 \
+			2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 \
+			2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
+# Plain HTTP exists only to bounce anything that reaches it. Cloudflare is set
+# to Always Use HTTPS, so in normal operation nothing arrives here.
+http://{$SITE_DOMAIN} {
+	redir https://{host}{uri} permanent
+}
+
+https://{$SITE_DOMAIN} {
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+
+	encode zstd gzip
+
+	header {
+		# HSTS. Cloudflare also sets this; belt and braces, and it keeps the
+		# guarantee if the site is ever served without the proxy.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+		# Server-rendered pages, no third-party anything. 'unsafe-inline' is
+		# deliberately absent: inline handlers are not used, scripts come from
+		# /assets only. BTCPay checkout is a top-level redirect, not an iframe,
+		# so it needs no frame-src.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; upgrade-insecure-requests"
+
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+
+		# Do not advertise what we are running.
+		-Server
+		-X-Powered-By
+	}
+
+	# Product images and static assets: long cache at the edge, the app never
+	# sees the second request.
+	@static path /assets/* /uploads/*
+	header @static Cache-Control "public, max-age=604800, immutable"
+
+	# The admin panel is additionally gated at the edge (Cloudflare Access or an
+	# IP rule, open question #16). This block exists so that gate has a single
+	# path prefix to bind to, and so admin responses are never cached.
+	handle /admin* {
+		header Cache-Control "no-store"
+		reverse_proxy app:3000
+	}
+
+	# The BTCPay webhook. Signature is verified in the app; this only keeps it
+	# out of any caching path.
+	handle /webhooks/* {
+		header Cache-Control "no-store"
+		reverse_proxy app:3000
+	}
+
+	handle {
+		reverse_proxy app:3000
+	}
+
+	log {
+		output stderr
+		format json
+		# Request URIs can carry an order number. They must not carry PII, and
+		# the app is written so they do not; see 04_TECH_DECISIONS.md (Logs).
+	}
+}

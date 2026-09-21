@@ -1,0 +1,16 @@
+.git
+.gitignore
+node_modules
+dist
+.pgdata
+exports
+*.age
+*.gpg
+.env
+.env.*
+!.env.example
+docker-compose*.yml
+Caddyfile
+certs
+src/public/uploads
+**/*.log

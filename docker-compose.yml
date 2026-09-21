@@ -46,6 +46,11 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    # The Caddyfile is written once and never edited per environment; the
+    # hostname it serves comes from here. Set SITE_DOMAIN in the deploy shell's
+    # .env next to docker-compose.yml (not the app secrets file).
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?SITE_DOMAIN is required}
     ports:
       - "80:80"
       - "443:443"
@@ -63,7 +68,7 @@ services:
     build: .
     restart: unless-stopped
     env_file: /etc/davmad-store/app.env
-    command: ["node", "dist/../scripts/purge.js"]
+    command: ["node", "dist/scripts/purge.js"]
     depends_on:
       db:
         condition: service_healthy
