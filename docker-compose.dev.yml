@@ -5,9 +5,10 @@
 #   npm run migrate
 #   npm run dev
 #
-# If Docker is not available on the dev machine, install PostgreSQL 16 natively
-# and point DATABASE_URL at it instead. Nothing in the application depends on
-# Docker; the container is a convenience, not a requirement.
+# If Docker is not available on the dev machine (it is not, on the machine this
+# was built on), use scripts/dev-db.sh instead: portable PostgreSQL 16 binaries
+# with the cluster in .pgdata/. Same DATABASE_URL either way. Nothing in the
+# application depends on Docker; the container is a convenience, not a requirement.
 
 services:
   db:

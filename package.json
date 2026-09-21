@@ -13,6 +13,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "migrate": "tsx scripts/migrate.ts",
+    "seed": "tsx scripts/seed.ts",
     "purge": "tsx scripts/purge.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:deps": "npm audit --omit=dev"

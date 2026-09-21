@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80" role="img" aria-label="Placeholder store logo">
+  <rect x="1" y="1" width="318" height="78" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="8 7" opacity="0.45"/>
+  <rect x="22" y="22" width="36" height="36" rx="6" fill="currentColor" opacity="0.14"/>
+  <path d="M31 47 v-9 a9 9 0 0 1 18 0 v9" fill="none" stroke="currentColor" stroke-width="2.5" opacity="0.7"/>
+  <rect x="28" y="40" width="24" height="17" rx="3" fill="none" stroke="currentColor" stroke-width="2.5" opacity="0.7"/>
+  <text x="74" y="40" font-family="Georgia, 'Times New Roman', serif" font-size="23" font-weight="700" fill="currentColor" opacity="0.85">Your Store</text>
+  <text x="75" y="59" font-family="Helvetica, Arial, sans-serif" font-size="11" letter-spacing="3.4" fill="currentColor" opacity="0.55">LOGO PLACEHOLDER</text>
+</svg>

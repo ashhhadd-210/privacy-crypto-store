@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" role="img" aria-label="Placeholder image for product 5">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="hsl(18, 22%, 88%)"/>
+      <stop offset="1" stop-color="hsl(18, 26%, 74%)"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#g)"/>
+  <g fill="none" stroke="hsl(18, 30%, 46%)" stroke-width="3" opacity="0.5">
+    <rect x="80" y="80" width="640" height="640" rx="12" stroke-dasharray="14 12"/>
+    <path d="M80 80 L720 720 M720 80 L80 720" stroke-width="1.5" opacity="0.35"/>
+  </g>
+  <circle cx="400" cy="352" r="104" fill="hsl(18, 30%, 46%)" opacity="0.14"/>
+  <text x="400" y="372" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="88" font-weight="700" fill="hsl(18, 34%, 34%)">05</text>
+  <text x="400" y="486" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="30" letter-spacing="7" fill="hsl(18, 26%, 40%)">PLACEHOLDER</text>
+  <text x="400" y="528" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="19" letter-spacing="1.5" fill="hsl(18, 20%, 48%)">client photo to replace this</text>
+</svg>
