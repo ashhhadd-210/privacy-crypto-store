@@ -14,7 +14,9 @@
     "start": "node dist/src/server.js",
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts",
+    "demo:encryption": "tsx scripts/demo-encryption.ts",
     "purge": "tsx scripts/purge.ts",
+    "test": "tsx --test src/**/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:deps": "npm audit --omit=dev"
   },
