@@ -9,14 +9,15 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/src/server.js",
+    "start": "node dist/src/main.js",
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts",
     "demo:encryption": "tsx scripts/demo-encryption.ts",
+    "admin:create": "tsx scripts/create-admin.ts",
     "purge": "tsx scripts/purge.ts",
-    "test": "tsx --test src/**/*.test.ts",
+    "test": "tsx --test src/lib/crypto.test.ts src/routes/routes.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:deps": "npm audit --omit=dev"
   },

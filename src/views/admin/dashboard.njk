@@ -1,0 +1,18 @@
+{% extends "layout.njk" %}
+{% block content %}
+<div class="card">
+  <h1>Store administration</h1>
+  <p class="muted">Signed in as {{ email }}</p>
+
+  <dl class="stats">
+    <dt>Products</dt><dd>{{ productCount }}</dd>
+  </dl>
+
+  <p class="muted">Products, orders and settings arrive in week three.</p>
+
+  <form method="post" action="/admin/logout">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <button type="submit" class="secondary">Sign out</button>
+  </form>
+</div>
+{% endblock %}

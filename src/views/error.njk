@@ -1,0 +1,10 @@
+{% extends "layout.njk" %}
+{% block content %}
+<div class="card">
+  <h1>{{ statusCode }}</h1>
+  {# Deliberately vague. A stack trace or a database message here is free
+     reconnaissance; the detail is in the server log, keyed by request id. #}
+  <p>{{ message }}</p>
+  <p class="muted">Reference: {{ requestId }}</p>
+</div>
+{% endblock %}

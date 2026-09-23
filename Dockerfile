@@ -54,4 +54,4 @@ RUN mkdir -p src/public/uploads exports \
 USER node
 EXPOSE 3000
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node", "dist/src/server.js"]
+CMD ["node", "dist/src/main.js"]
