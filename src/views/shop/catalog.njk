@@ -1,0 +1,26 @@
+{% extends "layout.njk" %}
+{% block content %}
+
+<h1 class="page-title">Shop</h1>
+
+{% if products.length == 0 %}
+  <p class="muted">Nothing is listed yet.</p>
+{% else %}
+<ul class="grid">
+  {% for p in products %}
+  <li class="product">
+    <a href="/p/{{ p.slug }}">
+      <div class="thumb{% if not p.inStock %} is-out{% endif %}">
+        <img src="{{ p.image }}" alt="{{ p.imageAlt }}" loading="lazy" width="800" height="800">
+        {% if not p.inStock %}<span class="badge">Sold out</span>{% endif %}
+      </div>
+      <h2>{{ p.name }}</h2>
+    </a>
+    <p class="price">{{ p.price }}</p>
+    {% if p.stockLabel %}<p class="stock{% if not p.inStock %} out{% endif %}">{{ p.stockLabel }}</p>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% endblock %}

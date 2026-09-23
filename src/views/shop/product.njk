@@ -1,0 +1,36 @@
+{% extends "layout.njk" %}
+{% block content %}
+
+<nav class="crumbs"><a href="/">&larr; All products</a></nav>
+
+<article class="detail">
+  <div class="detail-image{% if not product.inStock %} is-out{% endif %}">
+    <img src="{{ product.image }}" alt="{{ product.imageAlt }}" width="800" height="800">
+  </div>
+
+  <div class="detail-body">
+    <h1>{{ product.name }}</h1>
+    <p class="price large">{{ product.price }}</p>
+
+    {% if product.stockLabel %}
+      <p class="stock{% if not product.inStock %} out{% endif %}">{{ product.stockLabel }}</p>
+    {% endif %}
+
+    {% for para in paragraphs %}<p>{{ para }}</p>{% endfor %}
+
+    {% if soon %}
+      <p class="notice">The cart opens next week. The button works, there is just nothing behind it yet.</p>
+    {% endif %}
+
+    {% if product.inStock %}
+      <form method="post" action="/cart/add">
+        <input type="hidden" name="slug" value="{{ product.slug }}">
+        <button type="submit">Add to cart</button>
+      </form>
+    {% else %}
+      <p class="muted">This product is sold out.</p>
+    {% endif %}
+  </div>
+</article>
+
+{% endblock %}

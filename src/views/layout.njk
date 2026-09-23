@@ -4,14 +4,31 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title }}</title>
-  {# No third-party fonts, scripts or styles anywhere: the Content-Security-Policy
-     in the Caddyfile forbids them, and the privacy posture is the reason. #}
+  {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+  {# No third-party fonts, scripts or styles anywhere. The Content-Security-Policy
+     forbids them, and the privacy posture is the reason: a font request is a
+     request that tells someone else a customer is here. #}
   <link rel="stylesheet" href="/assets/app.css">
-  <meta name="robots" content="noindex, nofollow">
+  {# Only the shop is for search engines. Admin and error pages are not. #}
+  {% if bodyClass != 'shop' %}<meta name="robots" content="noindex, nofollow">{% endif %}
 </head>
-<body>
+<body class="{{ bodyClass | default('') }}">
+  {% if bodyClass == 'shop' %}
+  <header class="site">
+    <a class="brand" href="/">
+      <img src="/placeholder/logo.svg" alt="Store" width="160" height="40">
+    </a>
+  </header>
+  {% endif %}
+
   <main class="shell">
     {% block content %}{% endblock %}
   </main>
+
+  {% if bodyClass == 'shop' %}
+  <footer class="site">
+    <p>Payment in Bitcoin. Your details are encrypted and removed on a schedule you set.</p>
+  </footer>
+  {% endif %}
 </body>
 </html>

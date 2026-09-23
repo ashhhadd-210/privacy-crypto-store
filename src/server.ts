@@ -27,6 +27,7 @@ import { createLogger, requestIdFactory } from './lib/logger.js';
 import { initCrypto } from './lib/crypto.js';
 import { adminRoutes } from './routes/admin.js';
 import { healthRoutes } from './routes/health.js';
+import { shopRoutes } from './routes/shop.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -156,17 +157,7 @@ export async function buildServer() {
 
   await app.register(healthRoutes);
   await app.register(adminRoutes);
-
-  app.get('/', async (_request, reply) => {
-    // The storefront lands in week 2. Until then the root says nothing useful
-    // to a scanner.
-    return reply.code(200).view('error.njk', {
-      statusCode: 200,
-      message: 'Coming soon.',
-      requestId: '',
-      title: 'Store',
-    });
-  });
+  await app.register(shopRoutes);
 
   return app;
 }

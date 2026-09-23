@@ -78,6 +78,16 @@ export interface ProductsTable {
   updated_at: Generated<Date>;
 }
 
+export interface ProductImagesTable {
+  id: Generated<string>;
+  product_id: string;
+  /** Relative path under src/public, e.g. "placeholder/product-01.svg". */
+  path: string;
+  alt: Generated<string>;
+  sort_order: Generated<number>;
+  created_at: Generated<Date>;
+}
+
 export interface AuditLogTable {
   id: Generated<string>;
   actor: string;
@@ -93,6 +103,7 @@ export interface Database {
   admin_sessions: AdminSessionsTable;
   settings: SettingsTable;
   products: ProductsTable;
+  product_images: ProductImagesTable;
   audit_log: AuditLogTable;
 }
 
