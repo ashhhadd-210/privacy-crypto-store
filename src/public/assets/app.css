@@ -92,3 +92,13 @@ footer.site p { color: var(--muted); font-size: .85rem; margin: 0; }
 .detail-body h1 { font-size: 1.5rem; margin: 0; }
 .detail-body p { margin: 0 0 1rem; }
 .detail-body button { max-width: 16rem; }
+
+/* Narrow viewports. A grid track never shrinks below its stated minimum, so
+   minmax(15rem, …) would overflow on a phone once the page gutter is taken off.
+   min() lets the track collapse to the container instead. Deliberately no
+   overflow-x: hidden anywhere: that hides overflow rather than preventing it,
+   and the next layout mistake should be visible, not silently clipped. */
+.grid { grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr)); }
+img { max-width: 100%; height: auto; }
+header.site img { height: 2.5rem; width: auto; }
+.thumb img, .detail-image img { height: 100%; }

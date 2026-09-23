@@ -8,6 +8,8 @@
  * answers without headers, CSRF or rate limiting applied.
  */
 
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -30,6 +32,28 @@ import { healthRoutes } from './routes/health.js';
 import { shopRoutes } from './routes/shop.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Short content hash of the stylesheet, appended to its URL as ?v=.
+ *
+ * The static handler serves assets `immutable` with a seven-day cache, which is
+ * what keeps repeat requests at Cloudflare instead of reaching the app. That is
+ * only safe if the URL changes when the file does — otherwise a deploy leaves
+ * every returning visitor on last week's stylesheet, and the only fix is asking
+ * them to hard-refresh. There is no asset build step yet, so the hash is
+ * computed here at boot. When a build step lands it should hash the filename
+ * itself and this can go.
+ */
+function assetVersion(): string {
+  try {
+    return createHash('sha256')
+      .update(readFileSync(join(HERE, 'public', 'assets', 'app.css')))
+      .digest('hex')
+      .slice(0, 8);
+  } catch {
+    return 'dev';
+  }
+}
 
 export async function buildServer() {
   const config = loadConfig();
@@ -103,16 +127,15 @@ export async function buildServer() {
     // Nunjucks autoescapes by default; stated explicitly because turning it off
     // would be the single fastest way to introduce XSS into this codebase.
     options: { autoescape: true, noCache: !config.isProduction },
-    defaultContext: { title: 'Store' },
+    defaultContext: { title: 'Store', assetVersion: assetVersion() },
   });
 
   await app.register(fastifyStatic, {
     root: join(HERE, 'public'),
     prefix: '/',
     index: false,
-    // Assets are content-addressed by filename at build time, so a long
-    // immutable cache is safe and keeps repeat requests at Cloudflare rather
-    // than reaching the app. Product images join them from /uploads in week 3.
+    // Safe only because every asset URL carries ?v=<content hash>; see
+    // assetVersion() above. Product images join them from /uploads in week 3.
     cacheControl: true,
     maxAge: '7d',
     immutable: true,

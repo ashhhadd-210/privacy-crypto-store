@@ -8,7 +8,7 @@
   {# No third-party fonts, scripts or styles anywhere. The Content-Security-Policy
      forbids them, and the privacy posture is the reason: a font request is a
      request that tells someone else a customer is here. #}
-  <link rel="stylesheet" href="/assets/app.css">
+  <link rel="stylesheet" href="/assets/app.css?v={{ assetVersion }}">
   {# Only the shop is for search engines. Admin and error pages are not. #}
   {% if bodyClass != 'shop' %}<meta name="robots" content="noindex, nofollow">{% endif %}
 </head>
