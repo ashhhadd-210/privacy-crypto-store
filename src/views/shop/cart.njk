@@ -1,0 +1,76 @@
+{% extends "layout.njk" %}
+{% block content %}
+
+<nav class="crumbs"><a href="/">&larr; Keep shopping</a></nav>
+<h1 class="page-title">Your cart</h1>
+
+{% if message %}<p class="notice" role="status">{{ message }}</p>{% endif %}
+{% for n in notices %}<p class="notice warn" role="status">{{ n }}</p>{% endfor %}
+
+{% if lines.length == 0 %}
+  <p class="muted cart-empty">Your cart is empty.</p>
+{% else %}
+<ul class="cart-lines">
+  {% for line in lines %}
+  <li class="cart-line">
+    <a class="cart-thumb" href="/p/{{ line.slug }}">
+      <img src="{{ line.image }}" alt="{{ line.imageAlt }}" width="160" height="160">
+    </a>
+    <div class="cart-info">
+      <a class="cart-name" href="/p/{{ line.slug }}">{{ line.name }}</a>
+      <p class="stock">{{ line.unitPrice }} each</p>
+      <div class="cart-actions">
+        <form method="post" action="/cart/update" class="qty-form">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <input type="hidden" name="productId" value="{{ line.productId }}">
+          <label for="qty-{{ loop.index }}">Quantity</label>
+          <input id="qty-{{ loop.index }}" name="qty" type="number" inputmode="numeric"
+                 min="0" max="{{ line.maxQty }}" value="{{ line.qty }}" required>
+          <button type="submit" class="secondary small">Update</button>
+        </form>
+        <form method="post" action="/cart/remove">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <input type="hidden" name="productId" value="{{ line.productId }}">
+          <button type="submit" class="link">Remove</button>
+        </form>
+      </div>
+    </div>
+    <p class="cart-total">{{ line.lineTotal }}</p>
+  </li>
+  {% endfor %}
+</ul>
+
+<div class="cart-summary">
+  <p class="cart-subtotal"><span>Subtotal</span> <span>{{ subtotal }}</span></p>
+
+  {% if promo %}
+    <div class="promo-applied">
+      <p class="cart-row">
+        <span>Discount <span class="code">{{ promo.code }}</span> <span class="muted-inline">{{ promo.label }}</span></span>
+        <span>{% if promo.discountCents > 0 %}&minus;{{ promo.discount }}{% else %}{{ promo.discount }}{% endif %}</span>
+      </p>
+      {% if promo.shortBy %}<p class="stock">Add {{ promo.shortBy }} more to use this code.</p>{% endif %}
+      <form method="post" action="/cart/promo/remove">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+        <button type="submit" class="link">Remove code</button>
+      </form>
+    </div>
+  {% else %}
+    <form method="post" action="/cart/promo" class="promo-form">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <label for="code">Discount code</label>
+      <div class="promo-row">
+        <input id="code" name="code" type="text" maxlength="{{ maxCodeLength }}"
+               autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+        <button type="submit" class="secondary small">Apply</button>
+      </div>
+    </form>
+  {% endif %}
+
+  <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ total }}</strong></p>
+  <p class="muted">Items are not reserved. Stock is checked again at checkout, and shipping is added there.</p>
+  <a class="button" href="/checkout">Continue to checkout</a>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -18,6 +18,7 @@
 
 import type { FastifyInstance } from 'fastify';
 
+import { itemCount, readCart } from '../lib/cart.js';
 import { getDb } from '../lib/db.js';
 import { formatMoney } from '../lib/money.js';
 
@@ -75,7 +76,7 @@ function toView(
 }
 
 /** Fetches the first image for each of the given products, in one query. */
-async function imagesFor(productIds: string[]): Promise<Map<string, { path: string; alt: string }>> {
+export async function imagesFor(productIds: string[]): Promise<Map<string, { path: string; alt: string }>> {
   const byProduct = new Map<string, { path: string; alt: string }>();
   if (productIds.length === 0) return byProduct;
 
@@ -98,7 +99,7 @@ async function imagesFor(productIds: string[]): Promise<Map<string, { path: stri
 export async function shopRoutes(app: FastifyInstance): Promise<void> {
   const db = getDb();
 
-  app.get('/', async (_request, reply) => {
+  app.get('/', async (request, reply) => {
     const products = await db
       .selectFrom('products')
       .select(['id', 'slug', 'name', 'description', 'price_cents', 'stock', 'track_stock'])
@@ -111,6 +112,7 @@ export async function shopRoutes(app: FastifyInstance): Promise<void> {
     return reply.view('shop/catalog.njk', {
       title: 'Shop',
       bodyClass: 'shop',
+      cartCount: itemCount(readCart(request)),
       products: products.map((p) => toView(p, images.get(p.id))),
     });
   });
@@ -140,17 +142,8 @@ export async function shopRoutes(app: FastifyInstance): Promise<void> {
       // free of logic, and never marked safe: nunjucks escapes every paragraph.
       paragraphs: product.description.split(/\n\s*\n/).filter((p) => p.trim() !== ''),
       product: view,
-      soon: request.query !== null && typeof request.query === 'object' && 'soon' in request.query,
+      cartCount: itemCount(readCart(request)),
+      csrfToken: view.inStock ? reply.generateCsrf() : undefined,
     });
-  });
-
-  /**
-   * The cart lands on Tue 28 Sep (week 2). Until then the button is real, so
-   * the page can be reviewed as it will actually look and behave, and this
-   * says plainly that the next step is not built yet rather than failing.
-   */
-  app.post<{ Body: { slug?: string } }>('/cart/add', async (request, reply) => {
-    const slug = request.body?.slug ?? '';
-    return reply.redirect(`/p/${encodeURIComponent(slug)}?soon=1`, 303);
   });
 }

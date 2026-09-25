@@ -17,7 +17,7 @@
     "demo:encryption": "tsx scripts/demo-encryption.ts",
     "admin:create": "tsx scripts/create-admin.ts",
     "purge": "tsx scripts/purge.ts",
-    "test": "tsx --test src/lib/crypto.test.ts src/routes/routes.test.ts src/routes/shop.test.ts",
+    "test": "tsx --test src/lib/crypto.test.ts src/routes/routes.test.ts src/routes/shop.test.ts src/routes/cart.test.ts src/routes/checkout.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "audit:deps": "npm audit --omit=dev"
   },

@@ -18,12 +18,9 @@
 
     {% for para in paragraphs %}<p>{{ para }}</p>{% endfor %}
 
-    {% if soon %}
-      <p class="notice">The cart opens next week. The button works, there is just nothing behind it yet.</p>
-    {% endif %}
-
     {% if product.inStock %}
       <form method="post" action="/cart/add">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
         <input type="hidden" name="slug" value="{{ product.slug }}">
         <button type="submit">Add to cart</button>
       </form>

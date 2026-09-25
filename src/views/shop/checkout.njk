@@ -1,0 +1,72 @@
+{% extends "layout.njk" %}
+{% block content %}
+
+<nav class="crumbs"><a href="/cart">&larr; Back to cart</a></nav>
+<h1 class="page-title">Checkout</h1>
+
+{% macro field(name, label, auto, required=true, type='text', max=120) %}
+  <div class="field{% if errors[name] %} has-error{% endif %}">
+    <label for="f-{{ name }}">{{ label }}{% if not required %} <span class="muted-inline">(optional)</span>{% endif %}</label>
+    <input id="f-{{ name }}" name="{{ name }}" type="{{ type }}" autocomplete="{{ auto }}"
+           maxlength="{{ max }}" value="{{ form[name] }}"{% if required %} required{% endif %}
+           {% if errors[name] %}aria-invalid="true" aria-describedby="e-{{ name }}"{% endif %}>
+    {% if errors[name] %}<p class="field-error" id="e-{{ name }}">{{ errors[name] }}</p>{% endif %}
+  </div>
+{% endmacro %}
+
+<div class="checkout">
+  <form method="post" action="/checkout" class="checkout-form" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <input type="hidden" name="token" value="{{ form.token }}">
+    <input type="hidden" name="expectedTotal" value="{{ expectedTotal }}">
+
+    {% if notice %}<p class="notice warn" role="alert">{{ notice }}</p>{% endif %}
+
+    {% if errorList.length %}
+      <div class="error" role="alert"><p>Please check the highlighted fields.</p></div>
+    {% endif %}
+
+    <p class="muted">No account needed. We ask for three things only, to deliver your order and
+      confirm it by email. They are encrypted the moment you submit, and deleted on a schedule.</p>
+
+    <fieldset>
+      <legend>You</legend>
+      {{ field('name', 'Full name', 'name', max=100) }}
+      {{ field('email', 'Email', 'email', type='email', max=254) }}
+    </fieldset>
+
+    <fieldset>
+      <legend>Delivery address</legend>
+      {{ field('line1', 'Address line 1', 'address-line1') }}
+      {{ field('line2', 'Address line 2', 'address-line2', required=false) }}
+      <div class="field-row">
+        {{ field('city', 'Town or city', 'address-level2', max=80) }}
+        {{ field('region', 'State or region', 'address-level1', required=false, max=80) }}
+      </div>
+      <div class="field-row">
+        {{ field('postcode', 'Postcode or ZIP', 'postal-code', max=20) }}
+        {{ field('country', 'Country', 'country-name', max=56) }}
+      </div>
+    </fieldset>
+
+    <button type="submit">Place order</button>
+    <p class="muted small-print">You pay in Bitcoin on the next step. Nothing is charged until then.</p>
+  </form>
+
+  <aside class="checkout-summary">
+    <h2>Your order</h2>
+    <ul class="summary-lines">
+      {% for line in lines %}
+      <li><span>{{ line.name }} <span class="muted-inline">&times; {{ line.qty }}</span></span> <span>{{ line.lineTotal }}</span></li>
+      {% endfor %}
+    </ul>
+    <p class="cart-row"><span>Subtotal</span> <span>{{ subtotal }}</span></p>
+    {% if promo and promo.discountCents > 0 %}
+      <p class="cart-row"><span>Discount <span class="code">{{ promo.code }}</span></span> <span>&minus;{{ promo.discount }}</span></p>
+    {% endif %}
+    <p class="cart-row"><span>Shipping</span> <span>{{ shipping }}</span></p>
+    <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ total }}</strong></p>
+  </aside>
+</div>
+
+{% endblock %}

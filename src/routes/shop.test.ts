@@ -183,22 +183,6 @@ test('description text is escaped, never injected as markup', async () => {
   }
 });
 
-// --- the cart stub ---------------------------------------------------------
-
-test('add to cart returns to the product and says the cart is not built yet', async () => {
-  const res = await app.inject({
-    method: 'POST',
-    url: '/cart/add',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    payload: new URLSearchParams({ slug: 'sample-01-standard' }).toString(),
-  });
-  assert.equal(res.statusCode, 303);
-  assert.equal(res.headers['location'], '/p/sample-01-standard?soon=1');
-
-  const page = await app.inject({ method: 'GET', url: '/p/sample-01-standard?soon=1' });
-  assert.match(page.body, /cart opens next week/i);
-});
-
 // --- privacy posture -------------------------------------------------------
 
 test('the shop loads nothing from anywhere else', async () => {

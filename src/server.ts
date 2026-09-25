@@ -28,6 +28,8 @@ import { getDb } from './lib/db.js';
 import { createLogger, requestIdFactory } from './lib/logger.js';
 import { initCrypto } from './lib/crypto.js';
 import { adminRoutes } from './routes/admin.js';
+import { cartRoutes } from './routes/cart.js';
+import { checkoutRoutes } from './routes/checkout.js';
 import { healthRoutes } from './routes/health.js';
 import { shopRoutes } from './routes/shop.js';
 
@@ -181,6 +183,8 @@ export async function buildServer() {
   await app.register(healthRoutes);
   await app.register(adminRoutes);
   await app.register(shopRoutes);
+  await app.register(cartRoutes);
+  await app.register(checkoutRoutes);
 
   return app;
 }

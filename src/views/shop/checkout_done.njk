@@ -1,0 +1,25 @@
+{% extends "layout.njk" %}
+{% block content %}
+
+<h1 class="page-title">Order received</h1>
+
+<div class="card done">
+  <p>Your order number is</p>
+  <p class="order-number">{{ orderNumber }}</p>
+  <p class="muted">Keep it. Together with your email, it is how you check your order later.</p>
+
+  <ul class="summary-lines">
+    {% for i in items %}
+    <li><span>{{ i.name }} <span class="muted-inline">&times; {{ i.qty }}</span></span> <span>{{ i.total }}</span></li>
+    {% endfor %}
+  </ul>
+  <p class="cart-row"><span>Subtotal</span> <span>{{ subtotal }}</span></p>
+  {% if discount %}<p class="cart-row"><span>Discount</span> <span>&minus;{{ discount }}</span></p>{% endif %}
+  <p class="cart-row"><span>Shipping</span> <span>{{ shipping }}</span></p>
+  <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ total }}</strong></p>
+
+  <p class="notice">Bitcoin payment opens next week, once the payment server is running. Until then
+    your order is held as unpaid.</p>
+</div>
+
+{% endblock %}

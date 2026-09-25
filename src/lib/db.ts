@@ -88,6 +88,54 @@ export interface ProductImagesTable {
   created_at: Generated<Date>;
 }
 
+export interface PromotionsTable {
+  id: Generated<string>;
+  code: string;
+  type: 'percent' | 'fixed';
+  /** Percent 1–100, or cents. */
+  value: number;
+  min_subtotal_cents: Generated<number>;
+  /** NULL = unlimited. */
+  max_uses: number | null;
+  used_count: Generated<number>;
+  starts_at: Date | null;
+  ends_at: Date | null;
+  active: Generated<boolean>;
+  created_at: Generated<Date>;
+}
+
+export interface OrdersTable {
+  id: Generated<string>;
+  order_number: string;
+  customer_id: string | null;
+  status: Generated<'pending' | 'paid' | 'shipped' | 'complete' | 'expired' | 'cancelled' | 'refunded'>;
+  email_enc: Buffer;
+  email_bidx: Buffer;
+  name_enc: Buffer;
+  address_enc: Buffer;
+  phone_enc: Buffer | null;
+  subtotal_cents: number;
+  discount_cents: Generated<number>;
+  shipping_cents: Generated<number>;
+  total_cents: number;
+  currency: Generated<string>;
+  promotion_id: string | null;
+  checkout_token: string | null;
+  placed_at: Generated<Date>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface OrderItemsTable {
+  id: Generated<string>;
+  order_id: string;
+  product_id: string | null;
+  name_snapshot: string;
+  unit_price_cents: number;
+  quantity: number;
+  line_total_cents: number;
+}
+
 export interface AuditLogTable {
   id: Generated<string>;
   actor: string;
@@ -104,6 +152,9 @@ export interface Database {
   settings: SettingsTable;
   products: ProductsTable;
   product_images: ProductImagesTable;
+  promotions: PromotionsTable;
+  orders: OrdersTable;
+  order_items: OrderItemsTable;
   audit_log: AuditLogTable;
 }
 
