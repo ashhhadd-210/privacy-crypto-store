@@ -29,6 +29,14 @@
 	}
 }
 
+# Replace, never append. Cloudflare and Caddy both add to an incoming
+# X-Forwarded-For, so its leftmost entry is whatever the visitor typed, and the
+# app (trustProxy) reads the leftmost. {client_ip} is the address Caddy resolved
+# from CF-Connecting-IP via trusted_proxies above, which a visitor cannot forge.
+(client_ip) {
+	header_up X-Forwarded-For {client_ip}
+}
+
 # Plain HTTP exists only to bounce anything that reaches it. Cloudflare is set
 # to Always Use HTTPS, so in normal operation nothing arrives here.
 http://{$SITE_DOMAIN} {
@@ -73,18 +81,24 @@ https://{$SITE_DOMAIN} {
 	# path prefix to bind to, and so admin responses are never cached.
 	handle /admin* {
 		header Cache-Control "no-store"
-		reverse_proxy app:3000
+		reverse_proxy app:3000 {
+			import client_ip
+		}
 	}
 
 	# The BTCPay webhook. Signature is verified in the app; this only keeps it
 	# out of any caching path.
 	handle /webhooks/* {
 		header Cache-Control "no-store"
-		reverse_proxy app:3000
+		reverse_proxy app:3000 {
+			import client_ip
+		}
 	}
 
 	handle {
-		reverse_proxy app:3000
+		reverse_proxy app:3000 {
+			import client_ip
+		}
 	}
 
 	log {
