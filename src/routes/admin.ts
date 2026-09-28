@@ -148,7 +148,9 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       .select((eb) => eb.fn.countAll<number>().as('count'))
       .executeTakeFirstOrThrow();
 
-    return reply.view('admin/dashboard.njk', {
+    return reply.header('cache-control', 'no-store').view('admin/dashboard.njk', {
+      title: 'Store administration',
+      bodyClass: 'admin',
       email: request.adminUser?.email,
       productCount,
       csrfToken: reply.generateCsrf(),

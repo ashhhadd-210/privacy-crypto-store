@@ -1,0 +1,32 @@
+{% extends "layout.njk" %}
+{% set section = 'products' %}
+{% block content %}
+{% include "admin/_nav.njk" %}
+
+<div class="admin-head">
+  <h1>Products</h1>
+  <a class="button inline" href="/admin/products/new">Add a product</a>
+</div>
+
+{% if products.length == 0 %}
+  <p class="muted">No products yet.</p>
+{% else %}
+<table class="admin-table">
+  <thead>
+    <tr><th scope="col">Product</th><th scope="col">Price</th><th scope="col">Stock</th><th scope="col">Photos</th><th scope="col">In shop</th></tr>
+  </thead>
+  <tbody>
+    {% for p in products %}
+    <tr>
+      <td><a href="/admin/products/{{ p.id }}">{{ p.name }}</a></td>
+      <td>{{ p.price }}</td>
+      <td{% if p.low %} class="warn-text"{% endif %}>{{ p.stock }}</td>
+      <td>{{ p.images }}</td>
+      <td>{% if p.active %}<span class="pill on">Visible</span>{% else %}<span class="pill">Hidden</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% endblock %}

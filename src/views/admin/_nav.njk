@@ -1,0 +1,8 @@
+<nav class="admin-nav" aria-label="Administration">
+  <a href="/admin"{% if section == 'home' %} aria-current="page"{% endif %}>Overview</a>
+  <a href="/admin/products"{% if section == 'products' %} aria-current="page"{% endif %}>Products</a>
+  <form method="post" action="/admin/logout">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <button type="submit" class="link">Sign out</button>
+  </form>
+</nav>

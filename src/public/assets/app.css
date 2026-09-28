@@ -194,3 +194,33 @@ footer.site p + p { margin-top: .4rem; }
 footer.site a { color: var(--muted); }
 .order-status { font-size: 1.3rem; font-weight: 600; margin: .25rem 0 .5rem; }
 .card.done form button { max-width: 16rem; }
+
+/* ---------------------------------------------------------------- admin pages */
+body.admin { display: block; place-items: initial; }
+body.admin .shell { max-width: 62rem; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+.admin-nav { display: flex; align-items: center; gap: 1.25rem; padding: 0 0 1rem; margin: 0 0 1.5rem;
+             border-bottom: 1px solid var(--line); }
+.admin-nav a { color: var(--muted); text-decoration: none; }
+.admin-nav a[aria-current="page"] { color: var(--text); font-weight: 600; }
+.admin-nav form { margin-left: auto; }
+.admin-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0 0 1rem; }
+.admin-head h1 { margin: 0; }
+a.button.inline { display: inline-block; margin: 0; padding: .5rem 1rem; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.admin-table th, .admin-table td { text-align: left; padding: .6rem .5rem; border-bottom: 1px solid var(--line); }
+.admin-table th { color: var(--muted); font-weight: 500; font-size: .85rem; }
+.admin-table a { color: var(--text); }
+.warn-text { color: var(--error); }
+.pill { display: inline-block; font-size: .78rem; padding: .15rem .55rem; border-radius: 999px;
+        border: 1px solid var(--line); color: var(--muted); }
+.pill.on { color: var(--text); border-color: var(--accent); }
+.admin-form { max-width: 40rem; }
+.admin-form textarea { width: 100%; padding: .6rem .7rem; border-radius: 8px; font: inherit;
+                       border: 1px solid var(--line); background: var(--bg); color: var(--text); resize: vertical; }
+.hint { color: var(--muted); font-size: .82rem; margin: .3rem 0 0; }
+label.check { display: flex; gap: .5rem; align-items: baseline; margin: 1rem 0 0; color: var(--text); font-size: .95rem; }
+label.check input { width: auto; }
+details.advanced { margin: 1.25rem 0 0; }
+details.advanced summary { cursor: pointer; color: var(--muted); }
+.admin-form > button { max-width: 16rem; }
+@media (max-width: 40rem) { .admin-table th:nth-child(4), .admin-table td:nth-child(4) { display: none; } }

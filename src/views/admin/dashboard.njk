@@ -1,18 +1,15 @@
 {% extends "layout.njk" %}
+{% set section = 'home' %}
 {% block content %}
-<div class="card">
-  <h1>Store administration</h1>
-  <p class="muted">Signed in as {{ email }}</p>
+{% include "admin/_nav.njk" %}
 
-  <dl class="stats">
-    <dt>Products</dt><dd>{{ productCount }}</dd>
-  </dl>
+<h1>Store administration</h1>
+<p class="muted">Signed in as {{ email }}</p>
 
-  <p class="muted">Products, orders and settings arrive in week three.</p>
+<dl class="stats">
+  <dt>Products</dt><dd>{{ productCount }}</dd>
+</dl>
 
-  <form method="post" action="/admin/logout">
-    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
-    <button type="submit" class="secondary">Sign out</button>
-  </form>
-</div>
+<p><a class="button inline" href="/admin/products">Manage products</a></p>
+<p class="muted">Orders and settings arrive in week three.</p>
 {% endblock %}

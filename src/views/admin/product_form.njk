@@ -1,0 +1,56 @@
+{% extends "layout.njk" %}
+{% set section = 'products' %}
+{% block content %}
+{% include "admin/_nav.njk" %}
+
+<nav class="crumbs"><a href="/admin/products">&larr; All products</a></nav>
+<h1>{{ title }}</h1>
+
+{% if saved %}<p class="notice" role="status">Saved.{% if slugLive %} <a href="/p/{{ slugLive }}">View it in the shop</a>{% endif %}</p>{% endif %}
+{% if hasErrors %}<p class="error" role="alert">Nothing was saved. Please fix the highlighted fields.</p>{% endif %}
+
+{% macro field(name, label, hint='', type='text', max=200, inputmode='') %}
+  <div class="field{% if errors[name] %} has-error{% endif %}">
+    <label for="f-{{ name }}">{{ label }}</label>
+    <input id="f-{{ name }}" name="{{ name }}" type="{{ type }}" maxlength="{{ max }}" value="{{ values[name] }}"
+           {% if inputmode %}inputmode="{{ inputmode }}"{% endif %}
+           {% if errors[name] %}aria-invalid="true"{% endif %} aria-describedby="h-{{ name }}">
+    {% if errors[name] %}<p class="field-error" id="h-{{ name }}">{{ errors[name] }}</p>
+    {% elif hint %}<p class="hint" id="h-{{ name }}">{{ hint }}</p>{% endif %}
+  </div>
+{% endmacro %}
+
+<form method="post" action="{% if id %}/admin/products/{{ id }}{% else %}/admin/products{% endif %}" class="admin-form" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+  {{ field('name', 'Name') }}
+
+  <div class="field{% if errors.description %} has-error{% endif %}">
+    <label for="f-description">Description</label>
+    <textarea id="f-description" name="description" rows="8" maxlength="10000" aria-describedby="h-description">{{ values.description }}</textarea>
+    {% if errors.description %}<p class="field-error" id="h-description">{{ errors.description }}</p>
+    {% else %}<p class="hint" id="h-description">Plain text. Leave a blank line between paragraphs.</p>{% endif %}
+  </div>
+
+  <div class="field-row">
+    {{ field('price', 'Price (USD)', 'For example 24 or 24.50.', max=12, inputmode='decimal') }}
+    {{ field('stock', 'Stock', 'How many you have to sell.', max=7, inputmode='numeric') }}
+  </div>
+
+  <label class="check"><input type="checkbox" name="track_stock"{% if values.track_stock %} checked{% endif %}>
+    Count stock <span class="muted-inline">(untick for made-to-order items: they never sell out)</span></label>
+  <label class="check"><input type="checkbox" name="active"{% if values.active %} checked{% endif %}>
+    Visible in the shop <span class="muted-inline">(hidden products cannot be found or bought)</span></label>
+
+  <details class="advanced"{% if errors.slug or errors.sort_order %} open{% endif %}>
+    <summary>Advanced</summary>
+    <div class="field-row">
+      {{ field('slug', 'Web address', 'The part after /p/. Left blank, it is made from the name.', max=80) }}
+      {{ field('sort_order', 'Position in shop', 'Lower numbers come first.', max=6, inputmode='numeric') }}
+    </div>
+  </details>
+
+  <button type="submit">{% if id %}Save changes{% else %}Add product{% endif %}</button>
+</form>
+
+{% endblock %}
