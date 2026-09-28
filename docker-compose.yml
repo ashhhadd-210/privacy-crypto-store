@@ -26,7 +26,9 @@ services:
     networks: [internal]
 
   app:
-    build: .
+    # Built by CI and delivered by deploy/davmad-deploy.sh; the server never builds.
+    image: davmad-store:current
+    pull_policy: never
     restart: unless-stopped
     env_file: /etc/davmad-store/app.env   # 600 root:root on the host, outside the repo
     depends_on:
@@ -65,7 +67,8 @@ services:
   # Retention purge. Runs on a schedule inside its own short-lived container so a
   # hung purge can never take the storefront down with it.
   purge:
-    build: .
+    image: davmad-store:current
+    pull_policy: never
     restart: unless-stopped
     env_file: /etc/davmad-store/app.env
     command: ["node", "dist/scripts/purge.js"]

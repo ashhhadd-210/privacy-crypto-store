@@ -14,7 +14,8 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a run on main: it may be halfway through a deploy.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   verify:
@@ -147,3 +148,24 @@ jobs:
           docker rm -f smoke >/dev/null
           rm smoke.env
           exit $ok
+
+      # Deploys the exact image smoke-tested above. The key can run only the
+      # server's deploy script (a forced command), and the host key is pinned.
+      # Both live in this run's temp directory and vanish with the runner.
+      - name: Deploy to the server
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          docker save davmad-store:${{ github.sha }} -o image.tar
+          tar -cf release.tar image.tar docker-compose.yml Caddyfile
+          d="$RUNNER_TEMP/deploy"
+          install -m 700 -d "$d"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$d/key" && chmod 600 "$d/key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$d/hosts"
+          ssh -F none -i "$d/key" -o IdentitiesOnly=yes -o UserKnownHostsFile="$d/hosts" \
+            -o StrictHostKeyChecking=yes -o BatchMode=yes -o ServerAliveInterval=15 \
+            "deploy@$DEPLOY_HOST" < release.tar
+          rm -rf "$d" release.tar image.tar
