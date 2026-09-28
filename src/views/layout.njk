@@ -18,7 +18,10 @@
     <a class="brand" href="/">
       <img src="/placeholder/logo.svg" alt="Store" width="160" height="40">
     </a>
-    <a class="cart-link" href="/cart">Cart{% if cartCount %} ({{ cartCount }}){% endif %}</a>
+    <nav class="site-links">
+      <a href="/account">Account</a>
+      <a class="cart-link" href="/cart">Cart{% if cartCount %} ({{ cartCount }}){% endif %}</a>
+    </nav>
   </header>
   {% endif %}
 

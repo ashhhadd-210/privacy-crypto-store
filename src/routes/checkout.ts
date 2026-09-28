@@ -25,6 +25,7 @@ import type { Kysely, Transaction } from 'kysely';
 import { z } from 'zod';
 
 import { itemCount, readCart, readPromoCode, writeCart, writePromoCode } from '../lib/cart.js';
+import { CUSTOMER_COOKIE, resolveCustomer } from '../lib/customer-auth.js';
 import { blindIndex, encrypt, encryptAddress } from '../lib/crypto.js';
 import { loadConfig } from '../lib/config.js';
 import { type Database, getDb } from '../lib/db.js';
@@ -117,7 +118,12 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
       });
   }
 
-  app.get('/checkout', async (request, reply) => renderForm(request, reply, { token: randomUUID() }));
+  app.get('/checkout', async (request, reply) => {
+    // The only thing an account contributes to checkout is the email. The
+    // address is typed each time: accounts deliberately hold no address.
+    const customer = await resolveCustomer(request.cookies[CUSTOMER_COOKIE]);
+    return renderForm(request, reply, { token: randomUUID(), ...(customer ? { email: customer.email } : {}) });
+  });
 
   app.post(
     '/checkout',
@@ -156,6 +162,7 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
       const input = parsed.data;
       const cart = readCart(request);
       const code = readPromoCode(request);
+      const customer = await resolveCustomer(request.cookies[CUSTOMER_COOKIE]);
 
       let orderId: string;
       try {
@@ -178,7 +185,7 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
             .insertInto('orders')
             .values({
               order_number: orderNumber(),
-              customer_id: null,
+              customer_id: customer?.id ?? null,
               email_enc: encrypt(input.email, 'orders.email'),
               email_bidx: blindIndex(input.email, 'orders.email'),
               name_enc: encrypt(input.name, 'orders.name'),

@@ -1,0 +1,23 @@
+{% extends "layout.njk" %}
+{% block content %}
+<nav class="crumbs"><a href="/account">&larr; Your account</a></nav>
+<h1 class="page-title">Delete your account</h1>
+<div class="card account">
+  <p>This removes your account and the name, email and address from every order that is finished.
+    It cannot be undone.</p>
+  {% if inFlight > 0 %}
+  <p class="notice">{{ inFlight }} of your orders {% if inFlight == 1 %}is{% else %}are{% endif %} still being
+    paid for or delivered. {% if inFlight == 1 %}Its{% else %}Their{% endif %} delivery details are kept
+    until {% if inFlight == 1 %}it is{% else %}they are{% endif %} done, then removed on the store's schedule.
+    You can still check {% if inFlight == 1 %}it{% else %}them{% endif %} with the order number and your email.</p>
+  {% endif %}
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+
+  <form method="post" action="/account/delete">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <label for="password">Confirm with your password</label>
+    <input id="password" name="password" type="password" maxlength="200" autocomplete="current-password" required>
+    <button type="submit">Delete my account</button>
+  </form>
+</div>
+{% endblock %}

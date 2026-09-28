@@ -1,0 +1,19 @@
+{% extends "layout.njk" %}
+{% block content %}
+<h1 class="page-title">Sign in</h1>
+<div class="card account">
+  {% if notice %}<p class="notice" role="status">{{ notice }}</p>{% endif %}
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+
+  <form method="post" action="/account/login" autocomplete="on">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" maxlength="254" value="{{ email }}" autocomplete="username" required autofocus>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" maxlength="200" autocomplete="current-password" required>
+    <button type="submit">Sign in</button>
+  </form>
+  <p class="muted small-print">No account? <a href="/account/register">Create one</a>, or
+    <a href="/order">check an order</a> without one.</p>
+</div>
+{% endblock %}

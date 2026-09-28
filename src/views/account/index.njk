@@ -1,0 +1,38 @@
+{% extends "layout.njk" %}
+{% block content %}
+<h1 class="page-title">Your account</h1>
+<div class="card account">
+  <nav class="account-nav">
+    <span class="muted">{{ customer.email }}</span>
+    <form method="post" action="/account/logout">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <button type="submit" class="link">Sign out</button>
+    </form>
+  </nav>
+
+  <h2>Your orders</h2>
+  {% if orders.length == 0 %}
+    <p class="muted">No orders on this account yet. <a href="/">Browse the shop</a>.</p>
+  {% else %}
+  <table class="orders-table">
+    <thead><tr><th scope="col">Order</th><th scope="col">Placed</th><th scope="col">Status</th><th scope="col">Total</th></tr></thead>
+    <tbody>
+      {% for o in orders %}
+      <tr>
+        <td><a class="code" href="/account/orders/{{ o.id }}">{{ o.number }}</a></td>
+        <td>{{ o.placed }}</td>
+        <td>{{ o.status }}</td>
+        <td>{{ o.total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <div class="danger-box">
+    <h2>Delete this account</h2>
+    <p class="muted">Removes your account and the personal details from your finished orders.
+      <a href="/account/delete">Delete account</a></p>
+  </div>
+</div>
+{% endblock %}

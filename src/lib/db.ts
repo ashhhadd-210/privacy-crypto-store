@@ -141,6 +141,67 @@ export interface OrderItemsTable {
   line_total_cents: number;
 }
 
+export interface CustomersTable {
+  id: Generated<string>;
+  email_enc: Buffer;
+  email_bidx: Buffer;
+  name_enc: Buffer | null;
+  password_hash: string;
+  failed_logins: Generated<number>;
+  locked_until: Date | null;
+  created_at: Generated<Date>;
+  last_login_at: Date | null;
+}
+
+export interface CustomerSessionsTable {
+  /** SHA-256 of the cookie value, same rule as admin_sessions.id. */
+  id: string;
+  customer_id: string;
+  created_at: Generated<Date>;
+  expires_at: Date;
+}
+
+export interface PaymentsTable {
+  id: Generated<string>;
+  order_id: string;
+  btcpay_invoice_id: string;
+  status: Generated<'new' | 'processing' | 'settled' | 'expired' | 'invalid' | 'underpaid' | 'overpaid'>;
+  amount_fiat_cents: number;
+  currency_fiat: Generated<string>;
+  amount_crypto: string | null;
+  currency_crypto: string | null;
+  exchange_rate: string | null;
+  checkout_url: string | null;
+  settled_at: Date | null;
+  expires_at: Date | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+/** What survives the purge: no names, addresses, emails or order numbers. */
+export interface OrderAggregatesTable {
+  id: Generated<string>;
+  order_date: Date;
+  total_cents: number;
+  item_count: number;
+  currency: Generated<string>;
+  was_paid: boolean;
+  created_at: Generated<Date>;
+}
+
+export interface PurgeRunsTable {
+  id: Generated<string>;
+  ran_at: Generated<Date>;
+  retention_days: number;
+  cutoff_at: Date;
+  orders_purged: Generated<number>;
+  customers_purged: Generated<number>;
+  webhooks_purged: Generated<number>;
+  /** 'schedule' | 'admin' | 'account-delete' */
+  triggered_by: string;
+  error: string | null;
+}
+
 export interface AuditLogTable {
   id: Generated<string>;
   actor: string;
@@ -160,6 +221,11 @@ export interface Database {
   promotions: PromotionsTable;
   orders: OrdersTable;
   order_items: OrderItemsTable;
+  customers: CustomersTable;
+  customer_sessions: CustomerSessionsTable;
+  payments: PaymentsTable;
+  order_aggregates: OrderAggregatesTable;
+  purge_runs: PurgeRunsTable;
   audit_log: AuditLogTable;
 }
 

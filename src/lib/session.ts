@@ -67,6 +67,15 @@ export async function hashPassword(plaintext: string): Promise<string> {
   return argonHash(plaintext, ARGON_OPTIONS);
 }
 
+export async function verifyPassword(hash: string, plaintext: string): Promise<boolean> {
+  return argonVerify(hash, plaintext, ARGON_OPTIONS).catch(() => false);
+}
+
+/** Costs the same as a real verification, for when the account does not exist. */
+export async function verifyAgainstDummy(plaintext: string): Promise<void> {
+  await argonVerify(DUMMY_HASH, plaintext, ARGON_OPTIONS).catch(() => false);
+}
+
 /** HMAC of an IP address. Lets us spot a session moving without storing the address. */
 export function hashIp(ip: string | undefined): Buffer | null {
   if (ip === undefined || ip === '') return null;
@@ -75,7 +84,7 @@ export function hashIp(ip: string | undefined): Buffer | null {
 }
 
 /** The database key for a session token. Never store the token itself. */
-function tokenToId(token: string): string {
+export function tokenToId(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 

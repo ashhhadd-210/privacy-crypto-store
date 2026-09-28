@@ -261,3 +261,18 @@ a.button.secondary-link { background: transparent; border: 1px solid var(--line)
 fieldset.radio-row { border: 0; padding: 0; margin: 1rem 0 0; }
 fieldset.radio-row legend { font-size: .85rem; color: var(--muted); padding: 0; margin-bottom: .1rem; }
 fieldset.radio-row label.check { margin-top: .4rem; }
+
+/* ---------------------------------------------------------------- customer accounts */
+.site-links { display: flex; gap: 1.25rem; align-items: center; }
+.site-links a { color: var(--text); text-decoration: none; font-size: .95rem; white-space: nowrap; }
+.site-links a:hover { color: var(--accent); }
+.account-nav { display: flex; gap: 1rem; align-items: center; margin: 0 0 1.25rem; }
+.account-nav form { margin: 0; }
+.orders-table { width: 100%; border-collapse: collapse; font-size: .95rem; margin: .5rem 0 1rem; }
+.orders-table th, .orders-table td { text-align: left; padding: .6rem .5rem; border-bottom: 1px solid var(--line); }
+.orders-table th { color: var(--muted); font-weight: 500; font-size: .85rem; }
+.orders-table a { color: var(--text); }
+.card.account { max-width: 40rem; }
+.card.account form button { max-width: 16rem; }
+.danger-box { border: 1px solid color-mix(in srgb, var(--error) 35%, transparent); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; }
+.danger-box h2 { font-size: 1rem; margin: 0 0 .5rem; }

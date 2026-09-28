@@ -1,0 +1,22 @@
+{% extends "layout.njk" %}
+{% block content %}
+<nav class="crumbs"><a href="/account">&larr; Your account</a></nav>
+<h1 class="page-title">Order <span class="code">{{ order.number }}</span></h1>
+<div class="card account">
+  <p class="muted">Placed {{ order.placed }}</p>
+  <p class="order-status">{{ order.status }}</p>
+  <p>{{ order.detail }}</p>
+  {% if order.tracking %}<p>Tracking number: <span class="code">{{ order.tracking }}</span></p>{% endif %}
+
+  <ul class="summary-lines">
+    {% for i in order.items %}
+    <li><span>{{ i.name }} <span class="muted-inline">&times; {{ i.qty }}</span></span> <span>{{ i.total }}</span></li>
+    {% endfor %}
+  </ul>
+  <p class="cart-row"><span>Subtotal</span> <span>{{ order.subtotal }}</span></p>
+  {% if order.discount %}<p class="cart-row"><span>Discount</span> <span>&minus;{{ order.discount }}</span></p>{% endif %}
+  <p class="cart-row"><span>Shipping</span> <span>{{ order.shipping }}</span></p>
+  <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ order.total }}</strong></p>
+  <p class="muted small-print">For your privacy, the delivery address is not shown here.</p>
+</div>
+{% endblock %}

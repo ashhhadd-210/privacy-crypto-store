@@ -19,7 +19,7 @@ import { itemCount, readCart } from '../lib/cart.js';
 import { getDb } from '../lib/db.js';
 import { formatMoney } from '../lib/money.js';
 
-const STATUS: Record<string, { label: string; detail: string }> = {
+export const STATUS: Record<string, { label: string; detail: string }> = {
   pending: { label: 'Awaiting payment', detail: 'We have your order. It will be prepared once the Bitcoin payment is confirmed.' },
   paid: { label: 'Paid', detail: 'Your payment is confirmed and your order is being prepared.' },
   shipped: { label: 'Shipped', detail: 'Your order is on its way.' },
