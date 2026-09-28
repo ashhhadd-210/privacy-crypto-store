@@ -256,3 +256,8 @@ button.link.danger:hover { color: var(--error); }
 .timeline dd { margin: 0; }
 .danger-zone { margin-top: 1.5rem; }
 a.button.secondary-link { background: transparent; border: 1px solid var(--line); color: var(--text); }
+
+/* ---------------------------------------------------------------- admin discount codes */
+fieldset.radio-row { border: 0; padding: 0; margin: 1rem 0 0; }
+fieldset.radio-row legend { font-size: .85rem; color: var(--muted); padding: 0; margin-bottom: .1rem; }
+fieldset.radio-row label.check { margin-top: .4rem; }

@@ -1,0 +1,33 @@
+{% extends "layout.njk" %}
+{% block content %}
+{% include "admin/_nav.njk" %}
+
+<div class="admin-head">
+  <h1>Discount codes</h1>
+  <a class="button inline" href="/admin/promotions/new">Add a code</a>
+</div>
+
+{% if promotions.length == 0 %}
+  <p class="muted">No discount codes yet.</p>
+{% else %}
+<table class="admin-table">
+  <thead>
+    <tr><th scope="col">Code</th><th scope="col">Discount</th><th scope="col">Minimum spend</th><th scope="col">Used</th><th scope="col">Dates (UTC)</th><th scope="col">Status</th></tr>
+  </thead>
+  <tbody>
+    {% for p in promotions %}
+    <tr>
+      <td><a class="code" href="/admin/promotions/{{ p.id }}">{{ p.code }}</a></td>
+      <td>{{ p.amount }}</td>
+      <td>{{ p.minimum or '—' }}</td>
+      <td>{{ p.uses }}</td>
+      <td>{{ p.window }}</td>
+      <td><span class="pill{% if p.state == 'Live' %} on{% endif %}">{{ p.state }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted small-print">A use is counted when an order is paid, so abandoned checkouts never use up a code.</p>
+{% endif %}
+
+{% endblock %}

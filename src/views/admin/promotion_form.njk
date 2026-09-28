@@ -1,0 +1,50 @@
+{% extends "layout.njk" %}
+{% block content %}
+{% include "admin/_nav.njk" %}
+
+<nav class="crumbs"><a href="/admin/promotions">&larr; All discount codes</a></nav>
+<h1>{{ title }}</h1>
+
+{% if saved %}<p class="notice" role="status">Saved.</p>{% endif %}
+{% if hasErrors %}<p class="error" role="alert">Nothing was saved. Please fix the highlighted fields.</p>{% endif %}
+{% if id and uses > 0 %}<p class="muted">Used {{ uses }} time{% if uses != 1 %}s{% endif %} so far.</p>{% endif %}
+
+{% macro field(name, label, hint='', type='text', max=40, inputmode='') %}
+  <div class="field{% if errors[name] %} has-error{% endif %}">
+    <label for="f-{{ name }}">{{ label }}</label>
+    <input id="f-{{ name }}" name="{{ name }}" type="{{ type }}" maxlength="{{ max }}" value="{{ values[name] }}"
+           {% if inputmode %}inputmode="{{ inputmode }}"{% endif %}{% if errors[name] %} aria-invalid="true"{% endif %}
+           aria-describedby="h-{{ name }}">
+    {% if errors[name] %}<p class="field-error" id="h-{{ name }}">{{ errors[name] }}</p>
+    {% elif hint %}<p class="hint" id="h-{{ name }}">{{ hint }}</p>{% endif %}
+  </div>
+{% endmacro %}
+
+<form method="post" action="{% if id %}/admin/promotions/{{ id }}{% else %}/admin/promotions{% endif %}" class="admin-form" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+  {{ field('code', 'Code', 'What customers type. Letters, numbers and dashes; capitals do not matter.') }}
+
+  <fieldset class="radio-row">
+    <legend>Type of discount</legend>
+    <label class="check"><input type="radio" name="type" value="percent"{% if values.type != 'fixed' %} checked{% endif %}> A percentage off</label>
+    <label class="check"><input type="radio" name="type" value="fixed"{% if values.type == 'fixed' %} checked{% endif %}> A fixed amount off (USD)</label>
+  </fieldset>
+
+  <div class="field-row">
+    {{ field('value', 'Amount', 'For example 10 (per cent) or 5.00 (dollars).', max=12, inputmode='decimal') }}
+    {{ field('min_spend', 'Minimum spend (USD)', 'Optional. The cart must reach this first.', max=12, inputmode='decimal') }}
+  </div>
+  <div class="field-row">
+    {{ field('starts', 'First day', 'Optional. Leave empty to start now.', type='date', max=10) }}
+    {{ field('ends', 'Last day', 'Optional. Leave empty for no end.', type='date', max=10) }}
+  </div>
+  {{ field('max_uses', 'Limit on uses', 'Optional. Leave empty for no limit.', max=7, inputmode='numeric') }}
+
+  <label class="check"><input type="checkbox" name="active"{% if values.active %} checked{% endif %}>
+    Switched on <span class="muted-inline">(untick to stop the code working straight away)</span></label>
+
+  <button type="submit">{% if id %}Save changes{% else %}Add code{% endif %}</button>
+</form>
+
+{% endblock %}
