@@ -1,0 +1,36 @@
+{% extends "layout.njk" %}
+{% block content %}
+{% include "admin/_nav.njk" %}
+
+<div class="admin-head"><h1>Orders</h1></div>
+
+<nav class="tabs" aria-label="Filter orders">
+  {% for f in filters %}
+  <a href="/admin/orders{% if f.key != 'all' %}?status={{ f.key }}{% endif %}"{% if f.key == filter %} aria-current="page"{% endif %}>
+    {{ f.label }} <span class="count">{{ f.count }}</span></a>
+  {% endfor %}
+</nav>
+
+{% if orders.length == 0 %}
+  <p class="muted">No orders here yet.</p>
+{% else %}
+<table class="admin-table">
+  <thead>
+    <tr><th scope="col">Order</th><th scope="col">Placed</th><th scope="col">Items</th><th scope="col">Total</th><th scope="col">Status</th></tr>
+  </thead>
+  <tbody>
+    {% for o in orders %}
+    <tr>
+      <td><a class="code" href="/admin/orders/{{ o.id }}">{{ o.number }}</a></td>
+      <td>{{ o.placed }}</td>
+      <td>{{ o.items }}</td>
+      <td>{{ o.total }}</td>
+      <td><span class="pill status-{{ o.status }}">{{ o.statusLabel }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted small-print">Customer names and addresses are shown only inside each order, and every opening is recorded.</p>
+{% endif %}
+
+{% endblock %}

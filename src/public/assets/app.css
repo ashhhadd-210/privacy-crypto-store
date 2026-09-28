@@ -236,3 +236,23 @@ details.advanced summary { cursor: pointer; color: var(--muted); }
 button.link.danger:hover { color: var(--error); }
 .upload-form input[type="file"] { padding: .45rem; }
 .upload-form > button { max-width: 14rem; }
+
+/* ---------------------------------------------------------------- admin orders */
+.tabs { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin: 0 0 1rem; border-bottom: 1px solid var(--line); }
+.tabs a { color: var(--muted); text-decoration: none; padding: .4rem 0; border-bottom: 2px solid transparent; }
+.tabs a[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent); }
+.tabs .count { font-size: .8rem; color: var(--muted); }
+.pill.status-paid { border-color: var(--accent); color: var(--text); }
+.pill.status-cancelled, .pill.status-expired { color: var(--muted); }
+.order-grid { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); margin-bottom: 1rem; }
+@media (min-width: 46rem) { .order-grid { grid-template-columns: 1fr 1fr; } }
+.card-flat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+.card-flat h2 { font-size: 1rem; margin: 0 0 .75rem; }
+.card-flat address { font-style: normal; line-height: 1.6; }
+.card-flat textarea { width: 100%; padding: .6rem .7rem; border-radius: 8px; font: inherit;
+                      border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+.timeline { display: grid; grid-template-columns: auto 1fr; gap: .35rem 1rem; margin: 0; }
+.timeline dt { color: var(--muted); }
+.timeline dd { margin: 0; }
+.danger-zone { margin-top: 1.5rem; }
+a.button.secondary-link { background: transparent; border: 1px solid var(--line); color: var(--text); }

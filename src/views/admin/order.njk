@@ -1,0 +1,87 @@
+{% extends "layout.njk" %}
+{% block content %}
+{% include "admin/_nav.njk" %}
+
+<nav class="crumbs"><a href="/admin/orders">&larr; All orders</a></nav>
+<div class="admin-head">
+  <h1>Order <span class="code">{{ order.number }}</span></h1>
+  <span class="pill status-{{ order.status }}">{{ order.statusLabel }}</span>
+</div>
+
+{% if message %}<p class="{% if message.error %}error{% else %}notice{% endif %}" role="status">{{ message.text }}</p>{% endif %}
+
+<div class="order-grid">
+  <section class="card-flat">
+    <h2>Deliver to</h2>
+    <address>
+      {{ order.name }}<br>
+      {{ order.address.line1 }}<br>
+      {% if order.address.line2 %}{{ order.address.line2 }}<br>{% endif %}
+      {{ order.address.city }}{% if order.address.region %}, {{ order.address.region }}{% endif %}<br>
+      {{ order.address.postcode }}<br>
+      {{ order.address.country }}
+    </address>
+    <p class="muted">{{ order.email }}</p>
+    <p class="hint">Opening this order was recorded. These details are deleted automatically after your retention period.</p>
+  </section>
+
+  <section class="card-flat">
+    <h2>Timeline</h2>
+    <dl class="timeline">
+      <dt>Placed</dt><dd>{{ order.placed }}</dd>
+      <dt>Paid</dt><dd>{{ order.paid or '—' }}</dd>
+      <dt>Shipped</dt><dd>{{ order.shipped or '—' }}{% if order.tracking %}<br><span class="code">{{ order.tracking }}</span>{% endif %}</dd>
+    </dl>
+  </section>
+</div>
+
+<section class="card-flat">
+  <h2>Items</h2>
+  <table class="admin-table">
+    <thead><tr><th scope="col">Product</th><th scope="col">Each</th><th scope="col">Qty</th><th scope="col">Total</th></tr></thead>
+    <tbody>
+      {% for i in order.items %}
+      <tr><td>{{ i.name }}</td><td>{{ i.unit }}</td><td>{{ i.qty }}</td><td>{{ i.total }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="cart-summary">
+    <p class="cart-row"><span>Subtotal</span> <span>{{ order.subtotal }}</span></p>
+    {% if order.discount %}<p class="cart-row"><span>Discount</span> <span>&minus;{{ order.discount }}</span></p>{% endif %}
+    <p class="cart-row"><span>Shipping</span> <span>{{ order.shipping }}</span></p>
+    <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ order.total }}</strong></p>
+  </div>
+</section>
+
+{% if order.canShip %}
+<section class="card-flat">
+  <h2>Ship this order</h2>
+  <form method="post" action="/admin/orders/{{ order.id }}/ship" class="inline-form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <label for="f-tracking">Tracking number</label>
+    <div class="promo-row">
+      <input id="f-tracking" name="tracking" type="text" maxlength="60" required autocomplete="off" spellcheck="false">
+      <button type="submit" class="small">Mark shipped</button>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="card-flat">
+  <h2>Staff note</h2>
+  <form method="post" action="/admin/orders/{{ order.id }}/note">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <textarea name="note" rows="3" maxlength="1000" aria-label="Staff note">{{ order.note }}</textarea>
+    <p class="hint">Only you see this. Don't put customer details here; notes are kept after the order's personal details are deleted.</p>
+    <button type="submit" class="secondary small">Save note</button>
+  </form>
+</section>
+
+{% if order.canCancel %}
+<form method="post" action="/admin/orders/{{ order.id }}/cancel" class="danger-zone">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  <button type="submit" class="link danger">Cancel this unpaid order</button>
+</form>
+{% endif %}
+
+{% endblock %}
