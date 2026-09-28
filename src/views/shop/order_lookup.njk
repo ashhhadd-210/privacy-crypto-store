@@ -1,0 +1,45 @@
+{% extends "layout.njk" %}
+{% block content %}
+
+<h1 class="page-title">Check an order</h1>
+
+{% if order %}
+<div class="card done">
+  <p class="muted">Order <span class="code">{{ order.number }}</span>, placed {{ order.placed }}</p>
+  <p class="order-status status-{{ order.statusKey }}">{{ order.status }}</p>
+  <p>{{ order.detail }}</p>
+  {% if order.tracking %}<p>Tracking number: <span class="code">{{ order.tracking }}</span></p>{% endif %}
+
+  <ul class="summary-lines">
+    {% for i in order.items %}
+    <li><span>{{ i.name }} <span class="muted-inline">&times; {{ i.qty }}</span></span> <span>{{ i.total }}</span></li>
+    {% endfor %}
+  </ul>
+  <p class="cart-row"><span>Subtotal</span> <span>{{ order.subtotal }}</span></p>
+  {% if order.discount %}<p class="cart-row"><span>Discount</span> <span>&minus;{{ order.discount }}</span></p>{% endif %}
+  <p class="cart-row"><span>Shipping</span> <span>{{ order.shipping }}</span></p>
+  <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ order.total }}</strong></p>
+
+  <p class="muted small-print">For your privacy, your name and address are not shown here.</p>
+  <a href="/order">Check another order</a>
+</div>
+{% else %}
+<div class="card done">
+  <p class="muted">Enter the order number from your confirmation and the email you ordered with.
+    No account needed.</p>
+
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+
+  <form method="post" action="/order" autocomplete="on">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <label for="number">Order number</label>
+    <input id="number" name="number" type="text" maxlength="20" placeholder="SO-XXXX-XXXX"
+           value="{{ number }}" autocapitalize="characters" spellcheck="false" required>
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" maxlength="254" autocomplete="email" required>
+    <button type="submit">Check order</button>
+  </form>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -121,6 +121,7 @@ export interface OrdersTable {
   currency: Generated<string>;
   promotion_id: string | null;
   checkout_token: string | null;
+  tracking_number: string | null;
   placed_at: Generated<Date>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;

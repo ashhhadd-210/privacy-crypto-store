@@ -30,6 +30,7 @@ import { initCrypto } from './lib/crypto.js';
 import { adminRoutes } from './routes/admin.js';
 import { cartRoutes } from './routes/cart.js';
 import { checkoutRoutes } from './routes/checkout.js';
+import { lookupRoutes } from './routes/lookup.js';
 import { healthRoutes } from './routes/health.js';
 import { shopRoutes } from './routes/shop.js';
 
@@ -185,6 +186,7 @@ export async function buildServer() {
   await app.register(shopRoutes);
   await app.register(cartRoutes);
   await app.register(checkoutRoutes);
+  await app.register(lookupRoutes);
 
   return app;
 }

@@ -87,7 +87,7 @@ export async function imagesFor(productIds: string[]): Promise<Map<string, { pat
     .orderBy('sort_order')
     .execute();
 
-  // First image wins; the rest are for the gallery in week 2.
+  // First image wins: listings and the cart show one image per product.
   for (const row of rows) {
     if (!byProduct.has(row.product_id)) {
       byProduct.set(row.product_id, { path: row.path, alt: row.alt });
@@ -117,7 +117,7 @@ export async function shopRoutes(app: FastifyInstance): Promise<void> {
     });
   });
 
-  app.get<{ Params: { slug: string } }>('/p/:slug', async (request, reply) => {
+  app.get<{ Params: { slug: string }; Querystring: { img?: string } }>('/p/:slug', async (request, reply) => {
     const product = await db
       .selectFrom('products')
       .select(['id', 'slug', 'name', 'description', 'price_cents', 'stock', 'track_stock'])
@@ -131,8 +131,30 @@ export async function shopRoutes(app: FastifyInstance): Promise<void> {
       return reply.callNotFound();
     }
 
-    const images = await imagesFor([product.id]);
-    const view = toView(product, images.get(product.id));
+    const images = await db
+      .selectFrom('product_images')
+      .select(['path', 'alt'])
+      .where('product_id', '=', product.id)
+      .orderBy('sort_order')
+      .orderBy('id')
+      .execute();
+
+    // ?img=N picks the large image, 1-based. Anything else shows the first,
+    // so a stale or hand-edited link still lands on a working page.
+    const requested = Number(request.query.img);
+    const selected = Number.isInteger(requested) && requested >= 1 && requested <= images.length ? requested - 1 : 0;
+    const view = toView(product, images[selected]);
+    const base = `/p/${encodeURIComponent(product.slug)}`;
+    const gallery =
+      images.length > 1
+        ? images.map((img, i) => ({
+            src: `/${img.path}`,
+            alt: img.alt,
+            href: i === 0 ? base : `${base}?img=${i + 1}`,
+            current: i === selected,
+            label: `Image ${i + 1} of ${images.length}`,
+          }))
+        : [];
 
     return reply.view('shop/product.njk', {
       title: product.name,
@@ -142,6 +164,7 @@ export async function shopRoutes(app: FastifyInstance): Promise<void> {
       // free of logic, and never marked safe: nunjucks escapes every paragraph.
       paragraphs: product.description.split(/\n\s*\n/).filter((p) => p.trim() !== ''),
       product: view,
+      gallery,
       cartCount: itemCount(readCart(request)),
       csrfToken: view.inStock ? reply.generateCsrf() : undefined,
     });

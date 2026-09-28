@@ -33,6 +33,7 @@ type Seed = {
   active: boolean;
   restricted_item: boolean;
   image: string | null;
+  extraImages?: string[];
 };
 
 const PRODUCTS: Seed[] = [
@@ -110,6 +111,8 @@ const PRODUCTS: Seed[] = [
     active: true,
     restricted_item: false,
     image: 'placeholder/product-06.svg',
+    // Three views, so the product page gallery has something to switch between.
+    extraImages: ['placeholder/product-06-b.svg', 'placeholder/product-06-c.svg'],
   },
   {
     slug: 'sample-07-restricted-flag',
@@ -198,10 +201,11 @@ async function main(): Promise<void> {
         continue;
       }
 
-      if (p.image !== null) {
+      const images = p.image === null ? [] : [p.image, ...(p.extraImages ?? [])];
+      for (const [i, path] of images.entries()) {
         await client.query(
-          `INSERT INTO product_images (product_id, path, alt, sort_order) VALUES ($1, $2, $3, 1)`,
-          [id, p.image, `Placeholder image for ${p.name}`],
+          `INSERT INTO product_images (product_id, path, alt, sort_order) VALUES ($1, $2, $3, $4)`,
+          [id, path, images.length > 1 ? `Placeholder image ${i + 1} of ${images.length} for ${p.name}` : `Placeholder image for ${p.name}`, i + 1],
         );
       }
 

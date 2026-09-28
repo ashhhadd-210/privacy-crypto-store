@@ -183,6 +183,40 @@ test('description text is escaped, never injected as markup', async () => {
   }
 });
 
+// --- gallery ---------------------------------------------------------------
+
+const GALLERY = '/p/sample-06-long-description';
+const bigImage = (body: string) => /<div class="detail-image[^"]*">\s*<img src="([^"]+)"/.exec(body)?.[1];
+
+test('a product with several images shows every one, first image large', async () => {
+  const res = await app.inject({ method: 'GET', url: GALLERY });
+  const thumbs = [...res.body.matchAll(/<ul class="gallery"[\s\S]*?<\/ul>/g)][0]?.[0] ?? '';
+  assert.equal([...thumbs.matchAll(/<img /g)].length, 3);
+  assert.equal(bigImage(res.body), '/placeholder/product-06.svg');
+  assert.match(thumbs, /href="\/p\/sample-06-long-description" aria-current="true"/);
+  assert.match(thumbs, /aria-label="Image 3 of 3"/);
+});
+
+test('choosing a thumbnail shows that image large, and marks it', async () => {
+  const res = await app.inject({ method: 'GET', url: `${GALLERY}?img=2` });
+  assert.equal(res.statusCode, 200);
+  assert.equal(bigImage(res.body), '/placeholder/product-06-b.svg');
+  assert.match(res.body, /href="\/p\/sample-06-long-description\?img=2" aria-current="true"/);
+});
+
+test('an out-of-range or nonsense image number falls back to the first', async () => {
+  for (const img of ['0', '4', '-1', '1.5', 'abc', '99999999999999999999']) {
+    const res = await app.inject({ method: 'GET', url: `${GALLERY}?img=${img}` });
+    assert.equal(res.statusCode, 200, `img=${img}`);
+    assert.equal(bigImage(res.body), '/placeholder/product-06.svg', `img=${img}`);
+  }
+});
+
+test('a product with one image shows no gallery strip', async () => {
+  const res = await app.inject({ method: 'GET', url: '/p/sample-01-standard' });
+  assert.ok(!res.body.includes('class="gallery"'));
+});
+
 // --- privacy posture -------------------------------------------------------
 
 test('the shop loads nothing from anywhere else', async () => {

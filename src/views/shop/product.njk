@@ -4,8 +4,21 @@
 <nav class="crumbs"><a href="/">&larr; All products</a></nav>
 
 <article class="detail">
-  <div class="detail-image{% if not product.inStock %} is-out{% endif %}">
-    <img src="{{ product.image }}" alt="{{ product.imageAlt }}" width="800" height="800">
+  <div class="detail-media">
+    <div class="detail-image{% if not product.inStock %} is-out{% endif %}">
+      <img src="{{ product.image }}" alt="{{ product.imageAlt }}" width="800" height="800">
+    </div>
+    {% if gallery.length %}
+    <ul class="gallery" aria-label="Product images">
+      {% for g in gallery %}
+      <li>
+        <a href="{{ g.href }}"{% if g.current %} aria-current="true"{% endif %} aria-label="{{ g.label }}">
+          <img src="{{ g.src }}" alt="" width="120" height="120" loading="lazy">
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
   </div>
 
   <div class="detail-body">
