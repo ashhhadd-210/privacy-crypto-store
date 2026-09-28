@@ -53,4 +53,42 @@
   <button type="submit">{% if id %}Save changes{% else %}Add product{% endif %}</button>
 </form>
 
+{% if id %}
+<section id="photos" class="photos">
+  <h2>Photos</h2>
+  {% if photoMessage %}<p class="{% if photoMessage.error %}error{% else %}notice{% endif %}" role="status">{{ photoMessage.text }}</p>{% endif %}
+
+  {% if photos.length %}
+  <ul class="photo-grid">
+    {% for p in photos %}
+    <li>
+      <img src="{{ p.src }}" alt="{{ p.alt }}" width="160" height="160" loading="lazy">
+      {% if p.main %}<span class="pill on">Main photo</span>{% else %}
+      <form method="post" action="/admin/products/{{ id }}/images/{{ p.id }}/main">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+        <button type="submit" class="link">Make main</button>
+      </form>{% endif %}
+      <form method="post" action="/admin/products/{{ id }}/images/{{ p.id }}/delete">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+        <button type="submit" class="link danger">Remove</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">No photos yet. The shop shows a plain placeholder until you add one.</p>
+  {% endif %}
+
+  <form method="post" action="/admin/products/{{ id }}/images" enctype="multipart/form-data" class="upload-form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <label for="f-image">Add a photo</label>
+    <input id="f-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" required>
+    <label for="f-alt">Describe it <span class="muted-inline">(read aloud to blind shoppers; optional)</span></label>
+    <input id="f-alt" name="alt" type="text" maxlength="200">
+    <p class="hint">JPEG, PNG or WebP, up to 10 MB. Location, camera and other hidden details are removed before it is saved.</p>
+    <button type="submit" class="secondary">Upload photo</button>
+  </form>
+</section>
+{% endif %}
+
 {% endblock %}

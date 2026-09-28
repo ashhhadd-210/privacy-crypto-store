@@ -224,3 +224,15 @@ details.advanced { margin: 1.25rem 0 0; }
 details.advanced summary { cursor: pointer; color: var(--muted); }
 .admin-form > button { max-width: 16rem; }
 @media (max-width: 40rem) { .admin-table th:nth-child(4), .admin-table td:nth-child(4) { display: none; } }
+
+/* ---------------------------------------------------------------- admin photos */
+.photos { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); max-width: 40rem; }
+.photos h2 { font-size: 1.15rem; margin: 0 0 .75rem; }
+.photo-grid { list-style: none; margin: 0 0 1.25rem; padding: 0; display: grid; gap: 1rem;
+              grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); }
+.photo-grid li { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
+.photo-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+.photo-grid form { margin: 0; }
+button.link.danger:hover { color: var(--error); }
+.upload-form input[type="file"] { padding: .45rem; }
+.upload-form > button { max-width: 14rem; }

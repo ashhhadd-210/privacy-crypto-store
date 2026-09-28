@@ -29,6 +29,7 @@ import { initCrypto } from './lib/crypto.js';
 import { PUBLIC_DIR, VIEWS_DIR } from './lib/paths.js';
 import { adminRoutes } from './routes/admin.js';
 import { adminProductRoutes } from './routes/admin-products.js';
+import { adminImageRoutes } from './routes/admin-images.js';
 import { cartRoutes } from './routes/cart.js';
 import { checkoutRoutes } from './routes/checkout.js';
 import { lookupRoutes } from './routes/lookup.js';
@@ -184,6 +185,7 @@ export async function buildServer() {
   await app.register(healthRoutes);
   await app.register(adminRoutes);
   await app.register(adminProductRoutes);
+  await app.register(adminImageRoutes);
   await app.register(shopRoutes);
   await app.register(cartRoutes);
   await app.register(checkoutRoutes);

@@ -14,6 +14,7 @@ import { getDb } from '../lib/db.js';
 import { formatMoney } from '../lib/money.js';
 import { FORM_FIELDS, type ProductForm, priceInput, productForm, slugify } from '../lib/product-form.js';
 import { requireAdmin } from './admin.js';
+import { PHOTO_MESSAGES } from './admin-images.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -68,8 +69,22 @@ export async function adminProductRoutes(app: FastifyInstance): Promise<void> {
     for (let n = 2; ; n++) if (!taken.has(`${root}-${n}`)) return `${root}-${n}`;
   }
 
-  function renderForm(reply: FastifyReply, opts: { id?: string; values: FormValues; errors?: Errors; saved?: boolean; slugLive?: string | null }) {
+  async function renderForm(
+    reply: FastifyReply,
+    opts: { id?: string; values: FormValues; errors?: Errors; saved?: boolean; slugLive?: string | null; photo?: string | undefined },
+  ) {
     const errors = opts.errors ?? {};
+    const photos =
+      opts.id === undefined
+        ? []
+        : await db
+            .selectFrom('product_images')
+            .select(['id', 'path', 'alt'])
+            .where('product_id', '=', opts.id)
+            .orderBy('sort_order')
+            .orderBy('id')
+            .execute();
+    const photoMessage = opts.photo !== undefined && Object.hasOwn(PHOTO_MESSAGES, opts.photo) ? PHOTO_MESSAGES[opts.photo] : undefined;
     return reply
       .code(Object.keys(errors).length > 0 ? 400 : 200)
       .header('cache-control', 'no-store')
@@ -83,6 +98,8 @@ export async function adminProductRoutes(app: FastifyInstance): Promise<void> {
         hasErrors: Object.keys(errors).length > 0,
         saved: opts.saved ?? false,
         slugLive: opts.slugLive ?? null,
+        photos: photos.map((p, i) => ({ id: p.id, src: `/${p.path}`, alt: p.alt, main: i === 0 })),
+        photoMessage,
       });
   }
 
@@ -144,7 +161,7 @@ export async function adminProductRoutes(app: FastifyInstance): Promise<void> {
     return reply.redirect(`/admin/products/${row.id}?saved=1`, 303);
   });
 
-  app.get<{ Params: { id: string }; Querystring: { saved?: string } }>('/admin/products/:id', guard, async (request, reply) => {
+  app.get<{ Params: { id: string }; Querystring: { saved?: string; photo?: string } }>('/admin/products/:id', guard, async (request, reply) => {
     if (!UUID.test(request.params.id)) return reply.callNotFound();
     const p = await db.selectFrom('products').selectAll().where('id', '=', request.params.id).executeTakeFirst();
     if (p === undefined) return reply.callNotFound();
@@ -152,6 +169,7 @@ export async function adminProductRoutes(app: FastifyInstance): Promise<void> {
     return renderForm(reply, {
       id: p.id,
       saved: request.query.saved === '1',
+      photo: request.query.photo,
       slugLive: p.active ? p.slug : null,
       values: {
         name: p.name, slug: p.slug, description: p.description, price: priceInput(p.price_cents),
