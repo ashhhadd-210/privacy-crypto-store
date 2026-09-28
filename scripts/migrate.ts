@@ -23,14 +23,13 @@
 
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 import 'dotenv/config';
 import { Client } from 'pg';
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const MIGRATIONS_DIR = resolve(HERE, '..', 'db', 'migrations');
+import { MIGRATIONS_DIR } from '../src/lib/paths.js';
+
 
 /** Arbitrary but fixed: identifies this project's migration lock. */
 const LOCK_KEY = 0x6461766d; // 'davm'

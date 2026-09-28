@@ -10,8 +10,7 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 import cookie from '@fastify/cookie';
 import csrf from '@fastify/csrf-protection';
@@ -27,6 +26,7 @@ import { loadConfig } from './lib/config.js';
 import { getDb } from './lib/db.js';
 import { createLogger, requestIdFactory } from './lib/logger.js';
 import { initCrypto } from './lib/crypto.js';
+import { PUBLIC_DIR, VIEWS_DIR } from './lib/paths.js';
 import { adminRoutes } from './routes/admin.js';
 import { adminProductRoutes } from './routes/admin-products.js';
 import { cartRoutes } from './routes/cart.js';
@@ -35,7 +35,6 @@ import { lookupRoutes } from './routes/lookup.js';
 import { healthRoutes } from './routes/health.js';
 import { shopRoutes } from './routes/shop.js';
 
-const HERE = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Short content hash of the stylesheet, appended to its URL as ?v=.
@@ -51,7 +50,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 function assetVersion(): string {
   try {
     return createHash('sha256')
-      .update(readFileSync(join(HERE, 'public', 'assets', 'app.css')))
+      .update(readFileSync(join(PUBLIC_DIR, 'assets', 'app.css')))
       .digest('hex')
       .slice(0, 8);
   } catch {
@@ -127,7 +126,7 @@ export async function buildServer() {
 
   await app.register(view, {
     engine: { nunjucks },
-    root: join(HERE, 'views'),
+    root: VIEWS_DIR,
     // Nunjucks autoescapes by default; stated explicitly because turning it off
     // would be the single fastest way to introduce XSS into this codebase.
     options: { autoescape: true, noCache: !config.isProduction },
@@ -135,7 +134,7 @@ export async function buildServer() {
   });
 
   await app.register(fastifyStatic, {
-    root: join(HERE, 'public'),
+    root: PUBLIC_DIR,
     prefix: '/',
     index: false,
     // Safe only because every asset URL carries ?v=<content hash>; see

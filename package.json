@@ -13,6 +13,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/main.js",
     "migrate": "tsx scripts/migrate.ts",
+    "migrate:prod": "node dist/scripts/migrate.js",
     "seed": "tsx scripts/seed.ts",
     "demo:encryption": "tsx scripts/demo-encryption.ts",
     "admin:create": "tsx scripts/create-admin.ts",
@@ -37,6 +38,7 @@
     "nunjucks": "^3.2.4",
     "pg": "^8.13.1",
     "pino": "^9.6.0",
+    "sharp": "0.35.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
