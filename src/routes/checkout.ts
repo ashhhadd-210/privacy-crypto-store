@@ -31,6 +31,7 @@ import { loadConfig } from '../lib/config.js';
 import { type Database, getDb } from '../lib/db.js';
 import { formatMoney } from '../lib/money.js';
 import { priceCart, unchanged } from '../lib/pricing.js';
+import { getSettings } from '../lib/settings.js';
 import { lineViews, summaryView } from './cart.js';
 
 const ORDER_COOKIE = 'order';
@@ -62,9 +63,7 @@ function orderNumber(): string {
 }
 
 async function shippingCents(db: Kysely<Database> | Transaction<Database>): Promise<number> {
-  const row = await db.selectFrom('settings').select('value').where('key', '=', 'shipping_flat_cents').executeTakeFirst();
-  const value = Number(row?.value ?? 0);
-  return Number.isInteger(value) && value >= 0 ? value : 0;
+  return (await getSettings(db)).shipping_flat_cents;
 }
 
 function orderCookie(reply: FastifyReply, orderId: string): FastifyReply {

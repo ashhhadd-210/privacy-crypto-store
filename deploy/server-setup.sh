@@ -56,4 +56,31 @@ EOF
 chmod 440 /etc/sudoers.d/davmad-deploy
 visudo -cf /etc/sudoers.d/davmad-deploy >/dev/null
 
+cat > /etc/systemd/system/davmad-purge.service <<'EOF'
+[Unit]
+Description=davmad store: nightly retention purge
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/davmad
+ExecStart=/usr/bin/docker compose --profile cron run --rm purge
+EOF
+cat > /etc/systemd/system/davmad-purge.timer <<'EOF'
+[Unit]
+Description=davmad store: run the retention purge every night
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 UTC
+RandomizedDelaySec=15m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+systemctl daemon-reload
+systemctl enable --now davmad-purge.timer >/dev/null 2>&1
+echo "purge timer: $(systemctl is-active davmad-purge.timer), next $(systemctl show davmad-purge.timer -p NextElapseUSecRealtime --value)"
+
 echo "server ready for deployments"

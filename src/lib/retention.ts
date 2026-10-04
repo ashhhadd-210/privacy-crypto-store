@@ -10,9 +10,10 @@
  * paid for, or is in the post, keeps its delivery details until it is done.
  */
 
-import type { Transaction } from 'kysely';
+import type { Kysely, Transaction } from 'kysely';
 
 import type { Database } from './db.js';
+import { type StoreSettings, getSettings } from './settings.js';
 
 export const FINAL_STATES = ['complete', 'cancelled', 'expired', 'refunded'] as const;
 const PAID_STATES = new Set(['paid', 'shipped', 'complete']);
@@ -61,6 +62,87 @@ export interface PurgeRunSummary {
 export async function recordPurgeRun(trx: Transaction<Database>, run: PurgeRunSummary): Promise<void> {
   await trx
     .insertInto('purge_runs')
-    .values({ ...run, error: run.error ?? null })
+    .values({
+      retention_days: run.retention_days,
+      cutoff_at: run.cutoff_at,
+      orders_purged: run.orders_purged,
+      customers_purged: run.customers_purged,
+      webhooks_purged: run.webhooks_purged,
+      triggered_by: run.triggered_by,
+      error: run.error ?? null,
+    })
     .execute();
+}
+
+export interface PurgeResult extends PurgeRunSummary {
+  /** Automatic deletion is switched off in settings; nothing was touched. */
+  skipped?: true;
+}
+
+/**
+ * The scheduled purge. Finished orders older than the retention window lose
+ * their personal data (one transaction each, so one failure never blocks the
+ * rest); webhook payloads older than the window go; accounts with no sign-in
+ * inside the window and no order still in flight go. Every run is recorded.
+ * The settings switch applies to the schedule only: an admin pressing the
+ * button means it.
+ */
+export async function runPurge(
+  db: Kysely<Database>,
+  triggeredBy: 'schedule' | 'admin',
+  opts: { settings?: Partial<StoreSettings> } = {},
+): Promise<PurgeResult> {
+  const settings = { ...(await getSettings(db)), ...opts.settings };
+  const cutoff = new Date(Date.now() - settings.retention_days * 86_400_000);
+  const result: PurgeResult = {
+    retention_days: settings.retention_days,
+    cutoff_at: cutoff,
+    orders_purged: 0,
+    customers_purged: 0,
+    webhooks_purged: 0,
+    triggered_by: triggeredBy,
+  };
+
+  if (triggeredBy === 'schedule' && !settings.purge_enabled) {
+    result.skipped = true;
+    await db.transaction().execute((trx) => recordPurgeRun(trx, result));
+    return result;
+  }
+
+  try {
+    const due = await db
+      .selectFrom('orders')
+      .select('id')
+      .where('status', 'in', [...FINAL_STATES])
+      .where('placed_at', '<', cutoff)
+      .execute();
+    for (const o of due) {
+      const wiped = await db.transaction().execute((trx) => wipeOrder(trx, o.id));
+      if (wiped) result.orders_purged += 1;
+    }
+
+    const webhooks = await db.deleteFrom('payment_webhooks').where('created_at', '<', cutoff).executeTakeFirst();
+    result.webhooks_purged = Number(webhooks.numDeletedRows ?? 0);
+
+    const customers = await db
+      .deleteFrom('customers')
+      .where((eb) => eb.fn.coalesce('last_login_at', 'created_at'), '<', cutoff)
+      .where(({ not, exists, selectFrom }) =>
+        not(
+          exists(
+            selectFrom('orders')
+              .select('orders.id')
+              .whereRef('orders.customer_id', '=', 'customers.id')
+              .where('orders.status', 'not in', [...FINAL_STATES]),
+          ),
+        ),
+      )
+      .executeTakeFirst();
+    result.customers_purged = Number(customers.numDeletedRows ?? 0);
+  } catch (err) {
+    result.error = err instanceof Error ? err.message.slice(0, 500) : String(err);
+  }
+
+  await db.transaction().execute((trx) => recordPurgeRun(trx, result));
+  return result;
 }

@@ -111,6 +111,7 @@ export async function shopRoutes(app: FastifyInstance): Promise<void> {
 
     return reply.view('shop/catalog.njk', {
       title: 'Shop',
+      description: 'Shop and pay in Bitcoin. Your details are encrypted and removed on a schedule.',
       bodyClass: 'shop',
       cartCount: itemCount(readCart(request)),
       products: products.map((p) => toView(p, images.get(p.id))),
@@ -158,6 +159,7 @@ export async function shopRoutes(app: FastifyInstance): Promise<void> {
 
     return reply.view('shop/product.njk', {
       title: product.name,
+      description: product.description.replace(/\s+/g, ' ').trim().slice(0, 155),
       bodyClass: 'shop',
       // Descriptions are authored as plain text with blank lines between
       // paragraphs. Split here rather than in the template so the view stays

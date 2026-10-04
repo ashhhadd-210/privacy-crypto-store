@@ -1,0 +1,74 @@
+{% extends "layout.njk" %}
+{% block content %}
+{% include "admin/_nav.njk" %}
+
+<h1>Settings</h1>
+
+{% if saved %}<p class="notice" role="status">Saved.</p>{% endif %}
+{% if purged is defined and purged != null %}<p class="notice" role="status">Purge finished: {{ purged }} order{% if purged != '1' %}s{% endif %} cleared of personal details.</p>{% endif %}
+{% if hasErrors %}<p class="error" role="alert">Nothing was saved. Please fix the highlighted fields.</p>{% endif %}
+
+<form method="post" action="/admin/settings" class="admin-form" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+  <fieldset>
+    <legend>Store</legend>
+    <div class="field{% if errors.store_name %} has-error{% endif %}">
+      <label for="f-store_name">Store name</label>
+      <input id="f-store_name" name="store_name" type="text" maxlength="60" value="{{ values.store_name }}" aria-describedby="h-store_name">
+      {% if errors.store_name %}<p class="field-error" id="h-store_name">{{ errors.store_name }}</p>
+      {% else %}<p class="hint" id="h-store_name">Shown in the browser tab and on every page.</p>{% endif %}
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="f-currency">Currency</label>
+        <select id="f-currency" name="currency">
+          {% for c in currencies %}<option value="{{ c }}"{% if values.currency == c %} selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+        <p class="hint">Prices are shown in this currency; customers pay the equivalent in Bitcoin.</p>
+      </div>
+      <div class="field{% if errors.shipping %} has-error{% endif %}">
+        <label for="f-shipping">Flat shipping per order</label>
+        <input id="f-shipping" name="shipping" type="text" inputmode="decimal" maxlength="12" value="{{ values.shipping }}" aria-describedby="h-shipping">
+        {% if errors.shipping %}<p class="field-error" id="h-shipping">{{ errors.shipping }}</p>
+        {% else %}<p class="hint" id="h-shipping">Added at checkout. 0 means free shipping.</p>{% endif %}
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Privacy</legend>
+    <div class="field{% if errors.retention_days %} has-error{% endif %}">
+      <label for="f-retention_days">Keep customer details for</label>
+      <div class="promo-row" style="max-width: 14rem">
+        <input id="f-retention_days" name="retention_days" type="text" inputmode="numeric" maxlength="5" value="{{ values.retention_days }}" aria-describedby="h-retention_days">
+        <span class="muted-inline" style="align-self:center">days</span>
+      </div>
+      {% if errors.retention_days %}<p class="field-error" id="h-retention_days">{{ errors.retention_days }}</p>
+      {% else %}<p class="hint" id="h-retention_days">After this many days, finished orders lose their name, email and address. Your sales totals are kept. Orders still being paid for or delivered are never touched.</p>{% endif %}
+    </div>
+    <label class="check"><input type="checkbox" name="purge_enabled"{% if values.purge_enabled %} checked{% endif %}>
+      Delete automatically every night</label>
+    <label class="check"><input type="checkbox" name="export_before_purge"{% if values.export_before_purge %} checked{% endif %}>
+      Require an encrypted export before deleting <span class="muted-inline">(once export is set up)</span></label>
+  </fieldset>
+
+  <button type="submit">Save settings</button>
+</form>
+
+<section class="card-flat" style="max-width: 40rem; margin-top: 2rem">
+  <h2>Deletion history</h2>
+  {% if lastRun %}
+    <p>Last run {{ lastRun.when }} ({{ lastRun.by }}): {{ lastRun.orders }} order{% if lastRun.orders != 1 %}s{% endif %} and
+      {{ lastRun.customers }} account{% if lastRun.customers != 1 %}s{% endif %} cleared.{% if lastRun.error %} <span class="warn-text">Error: {{ lastRun.error }}</span>{% endif %}</p>
+  {% else %}
+    <p class="muted">No deletion has run yet.</p>
+  {% endif %}
+  <form method="post" action="/admin/settings/purge">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <button type="submit" class="secondary small">Run the deletion now</button>
+  </form>
+  <p class="hint">Uses the retention period above. Nothing newer than that is touched.</p>
+</section>
+
+{% endblock %}

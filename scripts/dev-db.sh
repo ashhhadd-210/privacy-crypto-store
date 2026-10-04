@@ -27,6 +27,8 @@ winpath() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else pr
 
 PG_BIN="${PG_BIN:-$HOME/pgsql-16/bin}"
 PGDATA="$(winpath "$APP/.pgdata")"
+# Follow the port in .env DATABASE_URL, so the app and this script agree.
+PGPORT="${PGPORT:-$(grep -E "^DATABASE_URL=" .env 2>/dev/null | grep -oE ":[0-9]+/" | tr -d ":/")}"
 PGPORT="${PGPORT:-5432}"
 LOG="$PGDATA/server.log"
 

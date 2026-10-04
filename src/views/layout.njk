@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ title }}</title>
+  <title>{{ title }}{% if storeName and title != storeName %} · {{ storeName }}{% endif %}</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
   {# No third-party fonts, scripts or styles anywhere. The Content-Security-Policy
      forbids them, and the privacy posture is the reason: a font request is a
@@ -16,7 +16,7 @@
   {% if bodyClass == 'shop' %}
   <header class="site">
     <a class="brand" href="/">
-      <img src="/placeholder/logo.svg" alt="Store" width="160" height="40">
+      <img src="/placeholder/logo.svg" alt="{{ storeName }}" width="160" height="40">
     </a>
     <nav class="site-links">
       <a href="/account">Account</a>

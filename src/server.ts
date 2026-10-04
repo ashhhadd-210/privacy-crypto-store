@@ -27,11 +27,13 @@ import { getDb } from './lib/db.js';
 import { createLogger, requestIdFactory } from './lib/logger.js';
 import { initCrypto } from './lib/crypto.js';
 import { PUBLIC_DIR, VIEWS_DIR } from './lib/paths.js';
+import { getSettings } from './lib/settings.js';
 import { adminRoutes } from './routes/admin.js';
 import { adminProductRoutes } from './routes/admin-products.js';
 import { adminImageRoutes } from './routes/admin-images.js';
 import { adminOrderRoutes } from './routes/admin-orders.js';
 import { adminPromotionRoutes } from './routes/admin-promotions.js';
+import { adminSettingsRoutes } from './routes/admin-settings.js';
 import { cartRoutes } from './routes/cart.js';
 import { checkoutRoutes } from './routes/checkout.js';
 import { lookupRoutes } from './routes/lookup.js';
@@ -59,6 +61,13 @@ function assetVersion(): string {
       .slice(0, 8);
   } catch {
     return 'dev';
+  }
+}
+
+declare module 'fastify' {
+  interface FastifyReply {
+    /** Merged into every template's data by @fastify/view. */
+    locals?: Record<string, unknown>;
   }
 }
 
@@ -137,6 +146,12 @@ export async function buildServer() {
     defaultContext: { title: 'Store', assetVersion: assetVersion() },
   });
 
+  // The store name is on every page; settings are cached, so this is cheap.
+  app.addHook('preHandler', async (_request, reply) => {
+    const settings = await getSettings();
+    reply.locals = { storeName: settings.store_name || 'Store' };
+  });
+
   await app.register(fastifyStatic, {
     root: PUBLIC_DIR,
     prefix: '/',
@@ -191,6 +206,7 @@ export async function buildServer() {
   await app.register(adminImageRoutes);
   await app.register(adminOrderRoutes);
   await app.register(adminPromotionRoutes);
+  await app.register(adminSettingsRoutes);
   await app.register(shopRoutes);
   await app.register(cartRoutes);
   await app.register(checkoutRoutes);

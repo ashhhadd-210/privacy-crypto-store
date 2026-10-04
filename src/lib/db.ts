@@ -178,6 +178,16 @@ export interface PaymentsTable {
   updated_at: Generated<Date>;
 }
 
+export interface PaymentWebhooksTable {
+  id: Generated<string>;
+  invoice_id: string;
+  event_type: string;
+  delivery_id: string;
+  payload: unknown;
+  processed_at: Date | null;
+  created_at: Generated<Date>;
+}
+
 /** What survives the purge: no names, addresses, emails or order numbers. */
 export interface OrderAggregatesTable {
   id: Generated<string>;
@@ -224,6 +234,7 @@ export interface Database {
   customers: CustomersTable;
   customer_sessions: CustomerSessionsTable;
   payments: PaymentsTable;
+  payment_webhooks: PaymentWebhooksTable;
   order_aggregates: OrderAggregatesTable;
   purge_runs: PurgeRunsTable;
   audit_log: AuditLogTable;

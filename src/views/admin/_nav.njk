@@ -3,6 +3,7 @@
   <a href="/admin/orders"{% if section == 'orders' %} aria-current="page"{% endif %}>Orders</a>
   <a href="/admin/products"{% if section == 'products' %} aria-current="page"{% endif %}>Products</a>
   <a href="/admin/promotions"{% if section == 'promotions' %} aria-current="page"{% endif %}>Discount codes</a>
+  <a href="/admin/settings"{% if section == 'settings' %} aria-current="page"{% endif %}>Settings</a>
   <form method="post" action="/admin/logout">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}">
     <button type="submit" class="link">Sign out</button>
