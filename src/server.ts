@@ -43,6 +43,7 @@ import { lookupRoutes } from './routes/lookup.js';
 import { accountRoutes } from './routes/account.js';
 import { healthRoutes } from './routes/health.js';
 import { shopRoutes } from './routes/shop.js';
+import { THEME_COOKIE, themeFrom, themeRoutes } from './routes/theme.js';
 
 
 /**
@@ -173,9 +174,15 @@ export async function buildServer() {
   });
 
   // The store name is on every page; settings are cached, so this is cheap.
-  app.addHook('preHandler', async (_request, reply) => {
+  // So is the visitor's light/dark choice (routes/theme.ts), and the path the
+  // header's toggle link sends them back to.
+  app.addHook('preHandler', async (request, reply) => {
     const settings = await getSettings();
-    reply.locals = { storeName: settings.store_name || 'Store' };
+    reply.locals = {
+      storeName: settings.store_name || 'Store',
+      theme: themeFrom(request.cookies[THEME_COOKIE]),
+      here: request.url,
+    };
   });
 
   await app.register(fastifyStatic, {
@@ -241,6 +248,7 @@ export async function buildServer() {
   await app.register(paymentRoutes);
   await app.register(lookupRoutes);
   await app.register(accountRoutes);
+  await app.register(themeRoutes);
 
   return app;
 }

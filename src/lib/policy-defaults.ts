@@ -22,7 +22,7 @@ export function defaultPolicy(key: PolicyKey, retentionDays: number): string {
         `How long we keep it. ${retentionDays} days after an order is finished, its name, email and address are deleted automatically. We keep only an anonymous record of the sale (the date, the amount and the number of items).`,
         'Accounts. An account is optional and holds only your email address and a password, never your address. You can delete your account yourself at any time from your account page.',
         'Payment. You pay in Bitcoin through our own payment server. We do not receive or store any card or bank details. We never share your details with the payment server: it only knows an order number and an amount.',
-        'No tracking. This site uses no analytics, no advertising and no tracking. It loads nothing from other websites. The only cookies are the ones needed for your cart and, if you sign in, your session.',
+        'No tracking. This site uses no analytics, no advertising and no tracking. It loads nothing from other websites. The only cookies are the ones needed for your cart, your light or dark setting if you pick one, and, if you sign in, your session.',
         'Emails. We email you only about your order: when it is received, when payment is confirmed, and when it ships. No newsletters and no tracking in the emails.',
         'Questions. Contact us using the details on this site.',
       ].join('\n\n');
