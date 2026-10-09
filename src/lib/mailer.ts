@@ -43,8 +43,10 @@ async function getTransport(): Promise<Transport | null> {
   if (transport !== undefined) return transport;
   const host = process.env['SMTP_HOST'];
   if (!host) return (transport = null);
-  const modName = 'nodemailer';
-  const nodemailer = (await import(modName)) as { createTransport: (o: object) => { sendMail: (m: object) => Promise<unknown> } };
+  const modName: string = 'nodemailer';
+  type Mod = { createTransport: (o: object) => { sendMail: (m: object) => Promise<unknown> } };
+  const mod = (await import(modName)) as Mod & { default?: Mod };
+  const nodemailer = mod.default ?? mod;
   const smtp = nodemailer.createTransport({
     host,
     port: Number(process.env['SMTP_PORT'] ?? 587),
