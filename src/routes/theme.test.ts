@@ -1,5 +1,5 @@
 /**
- * Light and dark mode: dark by default, the choice survives in a one-word
+ * Light and dark mode: light by default, the choice survives in a one-word
  * cookie, and the "send me back" path can never point at another site.
  */
 
@@ -23,10 +23,10 @@ after(async () => {
   await closeDb();
 });
 
-test('the shop is dark by default and offers light mode', async () => {
+test('the shop is light by default and offers dark mode', async () => {
   const res = await app.inject({ method: 'GET', url: '/' });
-  assert.match(res.body, /<html lang="en" data-theme="dark">/);
-  assert.match(res.body, /href="\/theme\/light\?back=%2F"/);
+  assert.match(res.body, /<html lang="en" data-theme="light">/);
+  assert.match(res.body, /href="\/theme\/dark\?back=%2F"/);
 });
 
 test('choosing light sets a preference cookie and returns to the page', async () => {
@@ -39,15 +39,15 @@ test('choosing light sets a preference cookie and returns to the page', async ()
   assert.match(cookie, /SameSite=Lax/i);
 });
 
-test('the light cookie renders the light page with a way back to dark', async () => {
-  const res = await app.inject({ method: 'GET', url: '/', cookies: { theme: 'light' } });
-  assert.match(res.body, /data-theme="light"/);
-  assert.match(res.body, /href="\/theme\/dark\?back=%2F"/);
+test('the dark cookie renders the dark page with a way back to light', async () => {
+  const res = await app.inject({ method: 'GET', url: '/', cookies: { theme: 'dark' } });
+  assert.match(res.body, /data-theme="dark"/);
+  assert.match(res.body, /href="\/theme\/light\?back=%2F"/);
 });
 
-test('anything other than "light" in the cookie means dark', async () => {
+test('anything other than "dark" in the cookie means light', async () => {
   const res = await app.inject({ method: 'GET', url: '/', cookies: { theme: '"><script>alert(1)</script>' } });
-  assert.match(res.body, /data-theme="dark"/);
+  assert.match(res.body, /data-theme="light"/);
   assert.ok(!res.body.includes('<script>alert(1)'));
 });
 

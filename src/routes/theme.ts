@@ -1,5 +1,5 @@
 /**
- * Light or dark, chosen by the visitor. Dark is the brand and the default.
+ * Light or dark, chosen by the visitor. Light is the default.
  *
  * No JavaScript: the toggle in the header is a plain link here, which sets a
  * one-word preference cookie and sends the visitor back to the page they were
@@ -15,7 +15,7 @@ export const THEME_COOKIE = 'theme';
 export type Theme = 'light' | 'dark';
 
 export function themeFrom(value: unknown): Theme {
-  return value === 'light' ? 'light' : 'dark';
+  return value === 'dark' ? 'dark' : 'light';
 }
 
 /**

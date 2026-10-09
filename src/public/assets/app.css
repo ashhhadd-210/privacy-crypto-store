@@ -325,7 +325,7 @@ fieldset.radio-row label.check { margin-top: .4rem; }
   --foot-bg: #040604; --foot-muted: #64736a;
 }
 
-/* Light mode, chosen with the sun icon in the header (routes/theme.ts). Same
+/* Light mode: the default (routes/theme.ts); the moon icon switches to dark. Same
    green, deepened so text on white and white on green both stay readable. */
 :root[data-theme="light"] {
   color-scheme: light;
