@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title }}{% if storeName and title != storeName %} · {{ storeName }}{% endif %}</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
-  <meta name="color-scheme" content="light dark">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#060907">
   {# No third-party fonts, scripts or styles anywhere. The Content-Security-Policy
      forbids them, and the privacy posture is the reason: a font request is a
      request that tells someone else a customer is here. #}
@@ -16,6 +17,13 @@
 <body class="{{ bodyClass | default('') }}">
   {% if bodyClass == 'shop' %}
   <a class="skip" href="#main">Skip to content</a>
+  <div class="topbar">
+    <ul aria-label="Store promises">
+      <li>Pay with Bitcoin</li>
+      <li>No account needed</li>
+      <li>Your details encrypted, then erased</li>
+    </ul>
+  </div>
   <header class="site-bar">
     <div class="site-bar-in">
       <a class="brand" href="/">
@@ -38,13 +46,33 @@
   {% if bodyClass == 'shop' %}
   <footer class="site-foot">
     <div class="site-foot-in">
-      <ul class="promises" aria-label="How this store handles your data">
-        <li><strong>Paid in Bitcoin</strong><span>Straight to the store's own wallet. No card, no bank.</span></li>
-        <li><strong>Encrypted</strong><span>Your name, email and address are locked the moment you order.</span></li>
-        <li><strong>Deleted on schedule</strong><span>Personal details are erased automatically once an order is done.</span></li>
-        <li><strong>No tracking</strong><span>No analytics, no ads, nothing loaded from anyone else.</span></li>
-      </ul>
-      <p class="foot-links"><a href="/order">Check an order</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/shipping-returns">Shipping and returns</a></p>
+      <div class="foot-grid">
+        <div class="foot-brand">
+          <img src="/placeholder/logo.svg" alt="" width="160" height="40" loading="lazy">
+          <p>Paid in Bitcoin. Your name, email and address are encrypted the moment you order and erased automatically once it is done. No analytics, no ads, nothing loaded from anyone else.</p>
+        </div>
+        <nav class="foot-col" aria-label="Shop">
+          <h2>Shop</h2>
+          <ul>
+            <li><a href="/">All products</a></li>
+            <li><a href="/cart">Cart</a></li>
+            <li><a href="/order">Track an order</a></li>
+            <li><a href="/account">Your account</a></li>
+          </ul>
+        </nav>
+        <nav class="foot-col" aria-label="Policies">
+          <h2>Policies</h2>
+          <ul>
+            <li><a href="/privacy">Privacy</a></li>
+            <li><a href="/terms">Terms</a></li>
+            <li><a href="/shipping-returns">Shipping and returns</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="foot-base">
+        <p>&copy; {{ storeName or 'This store' }}</p>
+        <p>Private by design. Payments by Bitcoin only.</p>
+      </div>
     </div>
   </footer>
   {% endif %}
