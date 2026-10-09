@@ -154,7 +154,12 @@ export async function buildServer() {
 
   // Every state-changing form must carry a token. Registered after cookie
   // because it stores the secret in one.
-  await app.register(csrf, { sessionPlugin: '@fastify/cookie' });
+  await app.register(csrf, {
+    sessionPlugin: '@fastify/cookie',
+    // Giving cookieOpts replaces the plugin's defaults, so they are restated,
+    // plus Secure in production (ZAP on the live site, 9 Oct).
+    cookieOpts: { path: '/', httpOnly: true, sameSite: 'strict', secure: config.isProduction },
+  });
 
   // --- views and static assets --------------------------------------------
 
