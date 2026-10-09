@@ -35,6 +35,7 @@ import { adminOrderRoutes } from './routes/admin-orders.js';
 import { adminPromotionRoutes } from './routes/admin-promotions.js';
 import { adminSettingsRoutes } from './routes/admin-settings.js';
 import { adminExportRoutes } from './routes/admin-export.js';
+import { pageRoutes } from './routes/pages.js';
 import { cartRoutes } from './routes/cart.js';
 import { checkoutRoutes } from './routes/checkout.js';
 import { paymentRoutes } from './routes/payments.js';
@@ -106,7 +107,9 @@ export async function buildServer() {
         styleSrc: ["'self'"],
         imgSrc: ["'self'", 'data:'],
         connectSrc: ["'self'"],
-        formAction: ["'self'"],
+        // A form POST that redirects elsewhere is checked against form-action
+        // too: checkout redirects to BTCPay, so its public origin is allowed.
+        formAction: ["'self'", ...(config.BTCPAY_PUBLIC_URL ? [new URL(config.BTCPAY_PUBLIC_URL).origin] : [])],
         frameAncestors: ["'none'"],
         baseUri: ["'none'"],
         objectSrc: ["'none'"],
@@ -210,6 +213,7 @@ export async function buildServer() {
   await app.register(adminPromotionRoutes);
   await app.register(adminSettingsRoutes);
   await app.register(adminExportRoutes);
+  await app.register(pageRoutes);
   await app.register(shopRoutes);
   await app.register(cartRoutes);
   await app.register(checkoutRoutes);

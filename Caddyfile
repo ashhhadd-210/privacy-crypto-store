@@ -57,7 +57,7 @@ https://{$SITE_DOMAIN} {
 		# deliberately absent: inline handlers are not used, scripts come from
 		# /assets only. BTCPay checkout is a top-level redirect, not an iframe,
 		# so it needs no frame-src.
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; upgrade-insecure-requests"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self' https://{$BTCPAY_DOMAIN}; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; upgrade-insecure-requests"
 
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
@@ -106,5 +106,23 @@ https://{$SITE_DOMAIN} {
 		format json
 		# Request URIs can carry an order number. They must not carry PII, and
 		# the app is written so they do not; see 04_TECH_DECISIONS.md (Logs).
+	}
+}
+
+# The client's own BTCPay payment pages. Customers are sent here from checkout;
+# BTCPay itself sits on its own Docker network and is never published to the
+# internet directly. Same origin certificate (it covers *.domain).
+https://{$BTCPAY_DOMAIN} {
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+	reverse_proxy generated_btcpayserver_1:49392 {
+		header_up X-Forwarded-Proto https
+		import client_ip
 	}
 }

@@ -1,0 +1,21 @@
+{% extends "layout.njk" %}
+{% block content %}
+{% include "admin/_nav.njk" %}
+
+<h1>Pages</h1>
+{% if saved %}<p class="notice" role="status">Saved.</p>{% endif %}
+<p class="muted" style="max-width: 40rem">The three pages linked at the bottom of every shop page. Plain text: leave a blank line
+  between paragraphs. The starting text is a draft, not legal advice; please read and adjust it before launch,
+  especially the parts in [square brackets].</p>
+
+<form method="post" action="/admin/pages" class="admin-form">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {% for p in pages %}
+  <div class="field">
+    <label for="f-{{ p.key }}">{{ p.title }} <span class="muted-inline">(<a href="{{ p.path }}">view</a>{% if not p.custom %}, starting text{% endif %})</span></label>
+    <textarea id="f-{{ p.key }}" name="{{ p.key }}" rows="12" maxlength="{{ max }}">{{ p.text }}</textarea>
+  </div>
+  {% endfor %}
+  <button type="submit">Save pages</button>
+</form>
+{% endblock %}

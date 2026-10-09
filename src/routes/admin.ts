@@ -14,8 +14,11 @@ import { getDb } from '../lib/db.js';
 import {
   createSession,
   destroySession,
+  hashPassword,
   resolveSession,
+  tokenToId,
   verifyLogin,
+  verifyPassword,
   type SessionUser,
 } from '../lib/session.js';
 
@@ -138,11 +141,29 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     return reply.clearCookie(SESSION_COOKIE, cookieOptions()).redirect('/admin/login');
   });
 
-  /**
-   * Placeholder dashboard. Products, orders and settings land here in week 3;
-   * today it exists to prove the session guard works end to end.
-   */
-  app.get('/admin', { preHandler: requireAdmin }, async (request, reply) => {
+  /** What needs attention today. */
+  app.get<{ Querystring: { password?: string } }>('/admin', { preHandler: requireAdmin }, async (request, reply) => {
+    const statuses = await db
+      .selectFrom('orders')
+      .select(['status', (eb) => eb.fn.countAll<number>().as('n')])
+      .groupBy('status')
+      .execute();
+    const n = (s: string) => Number(statuses.find((r) => r.status === s)?.n ?? 0);
+    const lowStock = await db
+      .selectFrom('products')
+      .select(['id', 'name', 'stock'])
+      .where('active', '=', true)
+      .where('track_stock', '=', true)
+      .where('stock', '<=', 2)
+      .orderBy('stock')
+      .limit(10)
+      .execute();
+    const attention = await db
+      .selectFrom('payments')
+      .select((eb) => eb.fn.countAll<number>().as('n'))
+      .where('status', 'in', ['underpaid', 'overpaid'])
+      .executeTakeFirstOrThrow();
+    const lastPurge = await db.selectFrom('purge_runs').select(['ran_at', 'orders_purged', 'error']).orderBy('ran_at', 'desc').limit(1).executeTakeFirst();
     const { count: productCount } = await db
       .selectFrom('products')
       .select((eb) => eb.fn.countAll<number>().as('count'))
@@ -153,7 +174,41 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       bodyClass: 'admin',
       email: request.adminUser?.email,
       productCount,
+      toShip: n('paid'),
+      awaiting: n('pending'),
+      payIssues: Number(attention.n),
+      lowStock,
+      lastPurge: lastPurge && { when: lastPurge.ran_at.toISOString().slice(0, 16).replace('T', ' ') + ' UTC', orders: lastPurge.orders_purged, error: lastPurge.error },
+      passwordChanged: request.query.password === 'changed',
       csrfToken: reply.generateCsrf(),
     });
   });
+
+  // --- change own password -----------------------------------------------------
+  app.get('/admin/password', { preHandler: requireAdmin }, async (_request, reply) =>
+    reply.header('cache-control', 'no-store').view('admin/password.njk', { title: 'Change password', bodyClass: 'admin', section: 'home', csrfToken: reply.generateCsrf() }),
+  );
+
+  app.post<{ Body: { current?: string; next?: string; confirm?: string } }>(
+    '/admin/password',
+    { preValidation: app.csrfProtection, preHandler: requireAdmin, config: { rateLimit: { max: 5, timeWindow: '10 minutes' } } },
+    async (request, reply) => {
+      const fail = (error: string) =>
+        reply.code(400).header('cache-control', 'no-store').view('admin/password.njk', { title: 'Change password', bodyClass: 'admin', section: 'home', csrfToken: reply.generateCsrf(), error });
+      const { current = '', next = '', confirm = '' } = request.body ?? {};
+      const me = request.adminUser as SessionUser;
+      const row = await db.selectFrom('admin_users').select('password_hash').where('id', '=', me.id).executeTakeFirstOrThrow();
+      if (!(await verifyPassword(row.password_hash, current))) return fail('Your current password is not correct.');
+      if (next.length < 14 || next.length > 200) return fail('Use a new password of at least 14 characters.');
+      if (next !== confirm) return fail('The two new passwords do not match.');
+      if (next === current) return fail('Choose a password different from the current one.');
+
+      await db.updateTable('admin_users').set({ password_hash: await hashPassword(next) }).where('id', '=', me.id).execute();
+      // Every other session ends: if the old password was known to someone, they are out now.
+      const token = request.cookies[SESSION_COOKIE];
+      await db.deleteFrom('admin_sessions').where('user_id', '=', me.id).where('id', '!=', token ? tokenToId(token) : '').execute();
+      await db.insertInto('audit_log').values({ actor: me.email, action: 'admin.password_change', entity: null, entity_id: null }).execute();
+      return reply.redirect('/admin?password=changed', 303);
+    },
+  );
 }

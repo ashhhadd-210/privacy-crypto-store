@@ -56,6 +56,7 @@ process.env['BTCPAY_URL'] = url;
 process.env['BTCPAY_STORE_ID'] = STORE;
 process.env['BTCPAY_API_KEY'] = API_KEY;
 process.env['BTCPAY_WEBHOOK_SECRET'] = SECRET;
+process.env['BTCPAY_PUBLIC_URL'] = 'https://pay.example';
 
 const { buildServer } = await import('../server.js');
 const { blindIndex } = await import('../lib/crypto.js');
@@ -386,3 +387,13 @@ test('if the mail service fails, the email is retried later rather than lost', a
   assert.ok(sent.some((m) => m.to === email));
 });
 
+
+// --- browser policy ------------------------------------------------------------
+
+test('the page security policy lets checkout forms continue to BTCPay, and nowhere else', async () => {
+  // Browsers apply form-action to the redirect after a form POST: without
+  // BTCPay's origin here, "Place order" would be blocked at the payment hop.
+  const page = await app.inject({ method: 'GET', url: '/' });
+  const csp = String(page.headers['content-security-policy']);
+  assert.match(csp, /form-action 'self' https:\/\/pay\.example(;|$)/);
+});

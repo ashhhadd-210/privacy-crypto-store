@@ -51,6 +51,21 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return (await res.json()) as T;
 }
 
+/**
+ * The store talks to BTCPay over the internal Docker network, but the
+ * customer's browser must be sent to BTCPay's public address. Rewrite the
+ * link's origin so it never points at an internal host name.
+ */
+function publicLink(link: string): string {
+  const pub = loadConfig().BTCPAY_PUBLIC_URL;
+  if (!pub) return link;
+  const u = new URL(link);
+  const p = new URL(pub);
+  u.protocol = p.protocol;
+  u.host = p.host;
+  return u.toString();
+}
+
 export async function createInvoice(opts: {
   amountCents: number;
   currency: string;
@@ -58,13 +73,14 @@ export async function createInvoice(opts: {
   orderNumber: string;
   redirectUrl: string;
 }): Promise<Invoice> {
-  return call<Invoice>('POST', '/invoices', {
+  const inv = await call<Invoice>('POST', '/invoices', {
     amount: (opts.amountCents / 100).toFixed(2),
     currency: opts.currency,
     // Only our own ids go to BTCPay: never a name, an email or an address.
     metadata: { orderId: opts.orderId, orderNumber: opts.orderNumber },
     checkout: { redirectURL: opts.redirectUrl, redirectAutomatically: true, expirationMinutes: 60 },
   });
+  return { ...inv, checkoutLink: publicLink(inv.checkoutLink) };
 }
 
 export async function getInvoice(id: string): Promise<Invoice> {

@@ -1,0 +1,7 @@
+{% extends "layout.njk" %}
+{% block content %}
+<h1 class="page-title">{{ title }}</h1>
+<article class="policy">
+  {% for p in paragraphs %}<p>{{ p }}</p>{% endfor %}
+</article>
+{% endblock %}

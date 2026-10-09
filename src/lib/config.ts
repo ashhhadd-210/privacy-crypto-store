@@ -50,6 +50,8 @@ const schema = z.object({
   BTCPAY_STORE_ID: z.string().optional(),
   BTCPAY_API_KEY: z.string().optional(),
   BTCPAY_WEBHOOK_SECRET: z.string().optional(),
+  /** Where customers' browsers reach BTCPay (https://pay.<domain>). BTCPAY_URL is the internal address. */
+  BTCPAY_PUBLIC_URL: z.string().url().optional().or(z.literal('')),
 
   /** The client's age public key. Exports and backups are locked to it. */
   EXPORT_AGE_RECIPIENT: z

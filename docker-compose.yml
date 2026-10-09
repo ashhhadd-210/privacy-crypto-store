@@ -43,7 +43,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-    networks: [internal, edge]
+    # btcpay: BTCPay's own network, so the app can create invoices without BTCPay being public.
+    networks: [internal, edge, btcpay]
 
   caddy:
     image: caddy:2-alpine
@@ -53,6 +54,7 @@ services:
     # .env next to docker-compose.yml (not the app secrets file).
     environment:
       SITE_DOMAIN: ${SITE_DOMAIN:?SITE_DOMAIN is required}
+      BTCPAY_DOMAIN: ${BTCPAY_DOMAIN:-pay.invalid}
     ports:
       - "80:80"
       - "443:443"
@@ -62,7 +64,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on: [app]
-    networks: [edge]
+    networks: [edge, btcpay]
 
   # Retention purge. Runs on a schedule inside its own short-lived container so a
   # hung purge can never take the storefront down with it.
@@ -91,3 +93,6 @@ networks:
   internal:
     internal: true    # no outbound route, db cannot phone home
   edge:
+  btcpay:
+    external: true
+    name: ${BTCPAY_NETWORK:-generated_default}

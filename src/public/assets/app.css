@@ -298,3 +298,7 @@ fieldset.radio-row label.check { margin-top: .4rem; }
 .action-row form { margin: 0; }
 .email-list { list-style: none; margin: 0 0 .75rem; padding: 0; }
 .email-list li { display: flex; gap: .75rem; padding: .3rem 0; border-bottom: 1px solid var(--line); }
+
+/* ---------------------------------------------------------------- policy pages */
+.policy { max-width: 42rem; }
+.policy p { margin: 0 0 1rem; line-height: 1.65; }
