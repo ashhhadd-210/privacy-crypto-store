@@ -55,8 +55,9 @@ services:
     environment:
       SITE_DOMAIN: ${SITE_DOMAIN:?SITE_DOMAIN is required}
       BTCPAY_DOMAIN: ${BTCPAY_DOMAIN:-pay.invalid}
+    # 443 only. Cloudflare (Full strict) reaches the origin on 443 alone, and
+    # BTCPay's own container already holds host port 80.
     ports:
-      - "80:80"
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
