@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title }}{% if storeName and title != storeName %} · {{ storeName }}{% endif %}</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+  <meta name="color-scheme" content="light dark">
   {# No third-party fonts, scripts or styles anywhere. The Content-Security-Policy
      forbids them, and the privacy posture is the reason: a font request is a
      request that tells someone else a customer is here. #}
@@ -14,25 +15,37 @@
 </head>
 <body class="{{ bodyClass | default('') }}">
   {% if bodyClass == 'shop' %}
-  <header class="site">
-    <a class="brand" href="/">
-      <img src="/placeholder/logo.svg" alt="{{ storeName }}" width="160" height="40">
-    </a>
-    <nav class="site-links">
-      <a href="/account">Account</a>
-      <a class="cart-link" href="/cart">Cart{% if cartCount %} ({{ cartCount }}){% endif %}</a>
-    </nav>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-bar">
+    <div class="site-bar-in">
+      <a class="brand" href="/">
+        <img class="brand-logo" src="/placeholder/logo.svg" alt="{{ storeName }}" width="160" height="40">
+      </a>
+      <nav class="site-links" aria-label="Store">
+        <a href="/">Shop</a>
+        <a href="/order">Track order</a>
+        <a href="/account">Account</a>
+        <a class="cart-link" href="/cart">Cart{% if cartCount %} ({{ cartCount }}){% endif %}</a>
+      </nav>
+    </div>
   </header>
   {% endif %}
 
-  <main class="shell">
+  <main class="shell" id="main">
     {% block content %}{% endblock %}
   </main>
 
   {% if bodyClass == 'shop' %}
-  <footer class="site">
-    <p>Payment in Bitcoin. Your details are encrypted and removed on a schedule you set.</p>
-    <p><a href="/order">Check an order</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/shipping-returns">Shipping and returns</a></p>
+  <footer class="site-foot">
+    <div class="site-foot-in">
+      <ul class="promises" aria-label="How this store handles your data">
+        <li><strong>Paid in Bitcoin</strong><span>Straight to the store's own wallet. No card, no bank.</span></li>
+        <li><strong>Encrypted</strong><span>Your name, email and address are locked the moment you order.</span></li>
+        <li><strong>Deleted on schedule</strong><span>Personal details are erased automatically once an order is done.</span></li>
+        <li><strong>No tracking</strong><span>No analytics, no ads, nothing loaded from anyone else.</span></li>
+      </ul>
+      <p class="foot-links"><a href="/order">Check an order</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/shipping-returns">Shipping and returns</a></p>
+    </div>
   </footer>
   {% endif %}
 </body>

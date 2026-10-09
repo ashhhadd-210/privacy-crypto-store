@@ -1,10 +1,16 @@
 {% extends "layout.njk" %}
 {% block content %}
 
-<h1 class="page-title">Shop</h1>
+<section class="hero">
+  <h1 class="page-title">Shop</h1>
+  <p class="hero-sub">Pay in Bitcoin. No account needed. Your details stay private.</p>
+</section>
 
 {% if products.length == 0 %}
-  <p class="muted">Nothing is listed yet.</p>
+  <div class="empty">
+    <p class="empty-title">New products are on the way.</p>
+    <p class="muted">Nothing is listed yet. Check back soon.</p>
+  </div>
 {% else %}
 <ul class="grid">
   {% for p in products %}
@@ -12,11 +18,14 @@
     <a href="/p/{{ p.slug }}">
       <div class="thumb{% if not p.inStock %} is-out{% endif %}">
         <img src="{{ p.image }}" alt="{{ p.imageAlt }}" loading="lazy" width="800" height="800">
-        {% if not p.inStock %}<span class="badge">Sold out</span>{% endif %}
+        {% if not p.inStock %}<span class="badge">Sold out</span>
+        {% elif p.stockLabel and p.stockLabel != 'In stock' %}<span class="badge low">{{ p.stockLabel }}</span>{% endif %}
       </div>
-      <h2>{{ p.name }}</h2>
+      <div class="product-meta">
+        <h2>{{ p.name }}</h2>
+        <p class="price">{{ p.price }}</p>
+      </div>
     </a>
-    <p class="price">{{ p.price }}</p>
     {% if p.stockLabel %}<p class="stock{% if not p.inStock %} out{% endif %}">{{ p.stockLabel }}</p>{% endif %}
   </li>
   {% endfor %}

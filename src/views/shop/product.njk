@@ -23,16 +23,15 @@
 
   <div class="detail-body">
     <h1>{{ product.name }}</h1>
-    <p class="price large">{{ product.price }}</p>
-
-    {% if product.stockLabel %}
-      <p class="stock{% if not product.inStock %} out{% endif %}">{{ product.stockLabel }}</p>
-    {% endif %}
-
-    {% for para in paragraphs %}<p>{{ para }}</p>{% endfor %}
+    <div class="buy-row">
+      <p class="price large">{{ product.price }}</p>
+      {% if product.stockLabel %}
+        <p class="stock{% if not product.inStock %} out{% endif %}">{{ product.stockLabel }}</p>
+      {% endif %}
+    </div>
 
     {% if product.inStock %}
-      <form method="post" action="/cart/add">
+      <form method="post" action="/cart/add" class="buy">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}">
         <input type="hidden" name="slug" value="{{ product.slug }}">
         <button type="submit">Add to cart</button>
@@ -40,6 +39,16 @@
     {% else %}
       <p class="muted">This product is sold out.</p>
     {% endif %}
+
+    <ul class="assure">
+      <li>Pay in Bitcoin, straight to the store</li>
+      <li>No account needed to order</li>
+      <li>Your details are encrypted and erased on schedule</li>
+    </ul>
+
+    <div class="description">
+      {% for para in paragraphs %}<p>{{ para }}</p>{% endfor %}
+    </div>
   </div>
 </article>
 
