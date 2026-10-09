@@ -83,4 +83,30 @@ systemctl daemon-reload
 systemctl enable --now davmad-purge.timer >/dev/null 2>&1
 echo "purge timer: $(systemctl is-active davmad-purge.timer), next $(systemctl show davmad-purge.timer -p NextElapseUSecRealtime --value)"
 
+cat > /etc/systemd/system/davmad-reconcile.service <<'EOF'
+[Unit]
+Description=davmad store: catch missed payment webhooks and send queued emails
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/davmad
+ExecStart=/usr/bin/docker compose run --rm --no-deps app node dist/scripts/reconcile.js
+EOF
+cat > /etc/systemd/system/davmad-reconcile.timer <<'EOF'
+[Unit]
+Description=davmad store: reconcile payments every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target
+EOF
+systemctl daemon-reload
+systemctl enable --now davmad-reconcile.timer >/dev/null 2>&1
+echo "reconcile timer: $(systemctl is-active davmad-reconcile.timer)"
+
 echo "server ready for deployments"

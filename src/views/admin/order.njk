@@ -53,6 +53,56 @@
   </div>
 </section>
 
+<section class="card-flat">
+  <h2>Payment</h2>
+  {% if order.payments.length %}
+  <table class="admin-table">
+    <thead><tr><th scope="col">Invoice</th><th scope="col">Amount</th><th scope="col">Created</th><th scope="col">State</th></tr></thead>
+    <tbody>
+      {% for p in order.payments %}
+      <tr><td class="code">{{ p.invoice }}</td><td>{{ p.amount }}</td><td>{{ p.created }}</td>
+        <td><span class="pill{% if p.status == 'settled' %} on{% endif %}{% if p.status == 'overpaid' or p.status == 'underpaid' %} warn{% endif %}">{{ p.label }}</span></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No invoice yet. One is created when the customer goes to pay.</p>
+  {% endif %}
+  <div class="action-row">
+    {% if order.canReopen %}
+    <form method="post" action="/admin/orders/{{ order.id }}/reopen">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <button type="submit" class="secondary small">Reopen for payment</button>
+    </form>
+    {% endif %}
+    {% if order.canRefund %}
+    <form method="post" action="/admin/orders/{{ order.id }}/refunded">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <button type="submit" class="secondary small">Mark as refunded</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if order.canRefund %}<p class="hint">Bitcoin refunds are sent by you from your own wallet. Mark the order here once you have.</p>{% endif %}
+</section>
+
+<section class="card-flat">
+  <h2>Emails to the customer</h2>
+  {% if order.emails.length %}
+  <ul class="email-list">
+    {% for e in order.emails %}
+    <li><span>{{ e.kind | capitalize }}</span> <span class="muted-inline">{% if e.sent %}sent {{ e.sent }}{% elif e.error %}retrying (attempt {{ e.attempts }}){% else %}queued{% endif %}</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">None yet.</p>
+  {% endif %}
+  <form method="post" action="/admin/orders/{{ order.id }}/resend">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <input type="hidden" name="kind" value="{{ order.resendKind }}">
+    <button type="submit" class="secondary small">Resend the latest email</button>
+  </form>
+</section>
+
 {% if order.canShip %}
 <section class="card-flat">
   <h2>Ship this order</h2>

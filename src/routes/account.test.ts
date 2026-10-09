@@ -73,7 +73,7 @@ async function placeOrder(e: string): Promise<string> {
   const token = /name="token" value="([^"]+)"/.exec(page.body)?.[1] ?? '';
   const expectedTotal = /name="expectedTotal" value="([^"]+)"/.exec(page.body)?.[1] ?? '';
   const res = await v.post('/checkout', { ...ADDRESS, email: e, _csrf: csrf, token, expectedTotal });
-  assert.equal(res.headers['location'], '/checkout/done');
+  assert.match(String(res.headers['location']), /^\/checkout\/done(\?pay=unavailable)?$/);
   const row = await getDb().selectFrom('orders').select('id').where('checkout_token', '=', token).executeTakeFirstOrThrow();
   return row.id;
 }

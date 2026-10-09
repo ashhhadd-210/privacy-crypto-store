@@ -20,6 +20,9 @@ import { decrypt, decryptAddress } from '../lib/crypto.js';
 import { getDb } from '../lib/db.js';
 import { formatMoney } from '../lib/money.js';
 import { requireAdmin } from './admin.js';
+import { invalidateInvoice } from '../lib/btcpay.js';
+import { enqueueEmail, processOutbox } from '../lib/mailer.js';
+import { emitOrderEvent } from '../lib/order-events.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -34,7 +37,20 @@ export const STATUS_LABEL: Record<string, string> = {
 };
 const FILTERS = ['all', 'paid', 'pending', 'shipped', 'cancelled'] as const;
 
+const PAYMENT_LABEL: Record<string, string> = {
+  new: 'Waiting for payment',
+  processing: 'Payment seen, confirming',
+  settled: 'Paid in full',
+  overpaid: 'Paid too much: refund the difference',
+  underpaid: 'Paid too little: contact the customer or refund',
+  expired: 'Expired unpaid',
+  invalid: 'Invalid',
+};
+
 const MESSAGES: Record<string, { text: string; error?: true }> = {
+  refunded: { text: 'Marked as refunded. Send the Bitcoin back from your wallet if you have not already.' },
+  reopened: { text: 'Order reopened. The customer can pay again from their order page.' },
+  resent: { text: 'Email queued. It goes out as soon as the mail service accepts it.' },
   shipped: { text: 'Marked as shipped.' },
   cancelled: { text: 'Order cancelled.' },
   noted: { text: 'Note saved.' },
@@ -114,6 +130,19 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
       .where('order_id', '=', o.id)
       .execute();
 
+    const payments = await db
+      .selectFrom('payments')
+      .select(['btcpay_invoice_id', 'status', 'amount_fiat_cents', 'created_at', 'settled_at'])
+      .where('order_id', '=', o.id)
+      .orderBy('created_at')
+      .execute();
+    const emails = await db
+      .selectFrom('email_outbox')
+      .select(['kind', 'sent_at', 'attempts', 'last_error'])
+      .where('order_id', '=', o.id)
+      .orderBy('created_at')
+      .execute();
+
     await audit(request.adminUser?.email, 'order.view', o.id);
 
     const msg = request.query.msg;
@@ -148,6 +177,18 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
         total: formatMoney(o.total_cents),
         canShip: o.status === 'paid',
         canCancel: o.status === 'pending',
+        canReopen: o.status === 'expired',
+        canRefund: o.status === 'paid' || o.status === 'cancelled' || payments.some((p) => p.status === 'overpaid' || p.status === 'underpaid'),
+        resendKind: o.status === 'shipped' || o.status === 'complete' ? 'shipped' : o.status === 'paid' ? 'paid' : 'received',
+        payments: payments.map((p) => ({
+          invoice: p.btcpay_invoice_id,
+          status: p.status,
+          label: PAYMENT_LABEL[p.status] ?? p.status,
+          amount: formatMoney(p.amount_fiat_cents),
+          created: date(p.created_at),
+          settled: date(p.settled_at),
+        })),
+        emails: emails.map((e) => ({ kind: e.kind, sent: date(e.sent_at), attempts: e.attempts, error: e.last_error !== null })),
       },
     });
   });
@@ -169,6 +210,7 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
       .executeTakeFirst();
     if (Number(res.numUpdatedRows) === 0) return reply.redirect(back(id, 'conflict'), 303);
     await audit(request.adminUser?.email, 'order.ship', id);
+    await emitOrderEvent(db, id, 'shipped');
     return reply.redirect(back(id, 'shipped'), 303);
   });
 
@@ -183,6 +225,11 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
       .executeTakeFirst();
     if (Number(res.numUpdatedRows) === 0) return reply.redirect(back(id, 'conflict'), 303);
     await audit(request.adminUser?.email, 'order.cancel', id);
+    // Close any invoice still open, so the customer cannot pay a cancelled order.
+    const open = await db.selectFrom('payments').select('btcpay_invoice_id').where('order_id', '=', id).where('status', 'in', ['new', 'processing']).execute();
+    for (const p of open) {
+      await invalidateInvoice(p.btcpay_invoice_id).catch((err: Error) => request.log.warn({ reason: err.message }, 'could not invalidate invoice'));
+    }
     return reply.redirect(back(id, 'cancelled'), 303);
   });
 
@@ -200,5 +247,47 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
     if (Number(res.numUpdatedRows) === 0) return reply.callNotFound();
     await audit(request.adminUser?.email, 'order.note', id);
     return reply.redirect(back(id, 'noted'), 303);
+  });
+
+  app.post<{ Params: { id: string } }>('/admin/orders/:id/refunded', guardPost, async (request, reply) => {
+    const { id } = request.params;
+    if (!UUID.test(id)) return reply.callNotFound();
+    const res = await db
+      .updateTable('orders')
+      .set({ status: 'refunded', updated_at: new Date() })
+      .where('id', '=', id)
+      .where('status', 'in', ['paid', 'cancelled', 'pending', 'expired'])
+      .executeTakeFirst();
+    if (Number(res.numUpdatedRows) === 0) return reply.redirect(back(id, 'conflict'), 303);
+    await audit(request.adminUser?.email, 'order.refunded', id);
+    return reply.redirect(back(id, 'refunded'), 303);
+  });
+
+  app.post<{ Params: { id: string } }>('/admin/orders/:id/reopen', guardPost, async (request, reply) => {
+    const { id } = request.params;
+    if (!UUID.test(id)) return reply.callNotFound();
+    const res = await db
+      .updateTable('orders')
+      .set({ status: 'pending', updated_at: new Date() })
+      .where('id', '=', id)
+      .where('status', '=', 'expired')
+      .executeTakeFirst();
+    if (Number(res.numUpdatedRows) === 0) return reply.redirect(back(id, 'conflict'), 303);
+    await audit(request.adminUser?.email, 'order.reopen', id);
+    return reply.redirect(back(id, 'reopened'), 303);
+  });
+
+  const resendBody = z.object({ kind: z.enum(['received', 'paid', 'shipped']) });
+  app.post<{ Params: { id: string } }>('/admin/orders/:id/resend', guardPost, async (request, reply) => {
+    const { id } = request.params;
+    if (!UUID.test(id)) return reply.callNotFound();
+    const parsed = resendBody.safeParse(request.body ?? {});
+    if (!parsed.success) return reply.redirect(back(id, 'conflict'), 303);
+    const exists = await db.selectFrom('orders').select('id').where('id', '=', id).executeTakeFirst();
+    if (exists === undefined) return reply.callNotFound();
+    await enqueueEmail(db, id, parsed.data.kind);
+    void processOutbox(db).catch(() => undefined);
+    await audit(request.adminUser?.email, 'order.resend', id, { kind: parsed.data.kind });
+    return reply.redirect(back(id, 'resent'), 303);
   });
 }

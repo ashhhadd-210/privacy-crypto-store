@@ -31,6 +31,10 @@ import { loadConfig } from '../lib/config.js';
 import { type Database, getDb } from '../lib/db.js';
 import { formatMoney } from '../lib/money.js';
 import { priceCart, unchanged } from '../lib/pricing.js';
+import { BtcpayUnavailable } from '../lib/btcpay.js';
+import { emitOrderEvent } from '../lib/order-events.js';
+import { ensureInvoice } from '../lib/payments.js';
+import { STATUS } from './lookup.js';
 import { getSettings } from '../lib/settings.js';
 import { lineViews, summaryView } from './cart.js';
 
@@ -164,6 +168,7 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
       const customer = await resolveCustomer(request.cookies[CUSTOMER_COOKIE]);
 
       let orderId: string;
+      let created = false;
       try {
         orderId = await db.transaction().execute(async (trx) => {
           const existing = await trx
@@ -233,6 +238,7 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
             )
             .execute();
 
+          created = true;
           return inserted.id;
         });
       } catch (err) {
@@ -246,18 +252,30 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
 
       writeCart(reply, new Map());
       writePromoCode(reply, null);
-      return orderCookie(reply, orderId).header('cache-control', 'no-store').redirect('/checkout/done', 303);
+      orderCookie(reply, orderId).header('cache-control', 'no-store');
+      if (created) await emitOrderEvent(db, orderId, 'received');
+
+      // Straight on to payment. If BTCPay cannot be reached the order is safe
+      // and the order page offers "Pay now" to try again.
+      try {
+        const url = await ensureInvoice(db, orderId, '/checkout/done');
+        return reply.redirect(url ?? '/checkout/done', 303);
+      } catch (err) {
+        if (!(err instanceof BtcpayUnavailable)) throw err;
+        request.log.warn({ reason: err.message }, 'invoice could not be created at checkout');
+        return reply.redirect('/checkout/done?pay=unavailable', 303);
+      }
     },
   );
 
-  app.get('/checkout/done', async (request, reply) => {
+  app.get<{ Querystring: { pay?: string } }>('/checkout/done', async (request, reply) => {
     const raw = request.cookies[ORDER_COOKIE];
     const unsigned = raw === undefined ? null : request.unsignCookie(raw);
     if (unsigned === null || !unsigned.valid || !unsigned.value) return reply.redirect('/', 303);
 
     const order = await db
       .selectFrom('orders')
-      .select(['id', 'order_number', 'subtotal_cents', 'discount_cents', 'shipping_cents', 'total_cents'])
+      .select(['id', 'order_number', 'status', 'subtotal_cents', 'discount_cents', 'shipping_cents', 'total_cents'])
       .where('id', '=', unsigned.value)
       .executeTakeFirst();
     if (order === undefined) return reply.redirect('/', 303);
@@ -271,10 +289,15 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
     // Deliberately no name, email or address on this page: nothing to decrypt,
     // nothing for a shared computer's next user to read.
     return reply.header('cache-control', 'no-store').view('shop/checkout_done.njk', {
-      title: 'Order received',
+      title: order.status === 'paid' ? 'Payment confirmed' : 'Order received',
       bodyClass: 'shop',
       cartCount: 0,
+      csrfToken: reply.generateCsrf(),
       orderNumber: order.order_number,
+      status: STATUS[order.status]?.label ?? order.status,
+      detail: STATUS[order.status]?.detail ?? '',
+      canPay: order.status === 'pending',
+      payUnavailable: request.query.pay === 'unavailable',
       items: items.map((i) => ({ name: i.name_snapshot, qty: i.quantity, total: formatMoney(i.line_total_cents) })),
       subtotal: formatMoney(order.subtotal_cents),
       discount: order.discount_cents > 0 ? formatMoney(order.discount_cents) : null,

@@ -52,7 +52,9 @@ export async function lookupRoutes(app: FastifyInstance): Promise<void> {
       });
   }
 
-  app.get('/order', async (request, reply) => form(request, reply, 200));
+  app.get<{ Querystring: { pay?: string } }>('/order', async (request, reply) =>
+    form(request, reply, 200, request.query.pay === 'unavailable' ? { error: 'The payment page could not be opened just now. Please look up your order and try again in a moment.' } : {}),
+  );
 
   app.post(
     '/order',
@@ -85,6 +87,9 @@ export async function lookupRoutes(app: FastifyInstance): Promise<void> {
 
       const status = STATUS[order.status] ?? { label: order.status, detail: '' };
       return form(request, reply, 200, {
+        // Echoed into a hidden POST field only, so "Pay now" can find the order
+        // again. It never goes into a URL.
+        payEmail: order.status === 'pending' ? parsed.data.email : null,
         order: {
           number: order.order_number,
           placed: order.placed_at.toISOString().slice(0, 10),

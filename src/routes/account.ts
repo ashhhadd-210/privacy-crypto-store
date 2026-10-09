@@ -180,6 +180,8 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
     return page(request, reply, 'order', {
       title: `Order ${o.order_number}`,
       order: {
+        id: o.id,
+        canPay: o.status === 'pending',
         number: o.order_number,
         placed: date(o.placed_at),
         status: status.label,

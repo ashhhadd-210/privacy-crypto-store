@@ -36,6 +36,7 @@ import { adminPromotionRoutes } from './routes/admin-promotions.js';
 import { adminSettingsRoutes } from './routes/admin-settings.js';
 import { cartRoutes } from './routes/cart.js';
 import { checkoutRoutes } from './routes/checkout.js';
+import { paymentRoutes } from './routes/payments.js';
 import { lookupRoutes } from './routes/lookup.js';
 import { accountRoutes } from './routes/account.js';
 import { healthRoutes } from './routes/health.js';
@@ -210,6 +211,7 @@ export async function buildServer() {
   await app.register(shopRoutes);
   await app.register(cartRoutes);
   await app.register(checkoutRoutes);
+  await app.register(paymentRoutes);
   await app.register(lookupRoutes);
   await app.register(accountRoutes);
 

@@ -7,6 +7,12 @@
   <p class="order-status">{{ order.status }}</p>
   <p>{{ order.detail }}</p>
   {% if order.tracking %}<p>Tracking number: <span class="code">{{ order.tracking }}</span></p>{% endif %}
+  {% if order.canPay %}
+  <form method="post" action="/account/orders/{{ order.id }}/pay">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <button type="submit">Pay {{ order.total }} in Bitcoin</button>
+  </form>
+  {% endif %}
 
   <ul class="summary-lines">
     {% for i in order.items %}

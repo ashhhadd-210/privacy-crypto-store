@@ -100,9 +100,13 @@ test('number and email are forgiving about case and spaces', async () => {
 
 test('nothing personal is shown, even to someone with the right email', async () => {
   const res = await lookup(PENDING, EMAIL);
-  for (const secret of [NAME, EMAIL, '7 Lookup Lane', 'Probeville', 'LK1 1QW']) {
+  for (const secret of [NAME, '7 Lookup Lane', 'Probeville', 'LK1 1QW']) {
     assert.ok(!res.body.includes(secret), `lookup page shows "${secret}"`);
   }
+  // The email the customer just typed goes back only into the hidden "Pay now"
+  // field (a POST body), never into visible text or a URL.
+  const visible = res.body.replace(/<input type="hidden" name="email" value="[^"]*">/g, '');
+  assert.ok(!visible.includes(EMAIL), 'email shown outside the hidden pay field');
 });
 
 test('a shipped order shows its tracking number', async () => {

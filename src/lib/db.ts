@@ -178,6 +178,17 @@ export interface PaymentsTable {
   updated_at: Generated<Date>;
 }
 
+export interface EmailOutboxTable {
+  id: Generated<string>;
+  order_id: string;
+  kind: string;
+  attempts: Generated<number>;
+  last_error: string | null;
+  next_attempt_at: Generated<Date>;
+  sent_at: Date | null;
+  created_at: Generated<Date>;
+}
+
 export interface PaymentWebhooksTable {
   id: Generated<string>;
   invoice_id: string;
@@ -235,6 +246,7 @@ export interface Database {
   customer_sessions: CustomerSessionsTable;
   payments: PaymentsTable;
   payment_webhooks: PaymentWebhooksTable;
+  email_outbox: EmailOutboxTable;
   order_aggregates: OrderAggregatesTable;
   purge_runs: PurgeRunsTable;
   audit_log: AuditLogTable;

@@ -9,6 +9,14 @@
   <p class="order-status status-{{ order.statusKey }}">{{ order.status }}</p>
   <p>{{ order.detail }}</p>
   {% if order.tracking %}<p>Tracking number: <span class="code">{{ order.tracking }}</span></p>{% endif %}
+  {% if payEmail %}
+  <form method="post" action="/order/pay">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <input type="hidden" name="number" value="{{ order.number }}">
+    <input type="hidden" name="email" value="{{ payEmail }}">
+    <button type="submit">Pay {{ order.total }} in Bitcoin</button>
+  </form>
+  {% endif %}
 
   <ul class="summary-lines">
     {% for i in order.items %}

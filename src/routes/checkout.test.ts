@@ -128,7 +128,7 @@ test('placing an order stores one pending order with frozen totals and item snap
   await v.applyCode(CODE);
   const { res, token } = await placeOrder();
   assert.equal(res.statusCode, 303);
-  assert.equal(res.headers['location'], '/checkout/done');
+  assert.match(String(res.headers['location']), /^\/checkout\/done(\?pay=unavailable)?$/);
 
   const [order, ...more] = await ordersFor(token);
   assert.ok(order);
@@ -230,7 +230,7 @@ test('submitting the same form twice places one order', async () => {
   // The back button: same form, and the browser still sending the old cart.
   if (cartCookie !== undefined) v.jar.set(CART_COOKIE, cartCookie);
   const again = await v.post('/checkout', { ...CUSTOMER, _csrf: csrf, token, expectedTotal });
-  assert.equal(again.headers['location'], '/checkout/done');
+  assert.match(String(again.headers['location']), /^\/checkout\/done(\?pay=unavailable)?$/);
   assert.equal((await ordersFor(token)).length, 1);
 });
 
@@ -278,7 +278,7 @@ test('if a price changed after the checkout page was opened, the new total is sh
     // Placing it again from the refreshed page, at the total now shown, works.
     const again = /name="expectedTotal" value="([^"]+)"/.exec(res.body)?.[1] ?? '';
     const ok = await v.post('/checkout', { ...CUSTOMER, _csrf: csrf, token, expectedTotal: again });
-    assert.equal(ok.headers['location'], '/checkout/done');
+    assert.match(String(ok.headers['location']), /^\/checkout\/done(\?pay=unavailable)?$/);
     assert.equal((await ordersFor(token))[0]?.subtotal_cents, 3000);
   } finally {
     await db.updateTable('products').set({ price_cents: 2400 }).where('id', '=', ids.mug).execute();

@@ -1,12 +1,25 @@
 {% extends "layout.njk" %}
 {% block content %}
 
-<h1 class="page-title">Order received</h1>
+<h1 class="page-title">{{ title }}</h1>
 
 <div class="card done">
   <p>Your order number is</p>
   <p class="order-number">{{ orderNumber }}</p>
   <p class="muted">Keep it. Together with your email, it is how you <a href="/order">check your order</a> later.</p>
+
+  <p class="order-status">{{ status }}</p>
+  <p>{{ detail }}</p>
+
+  {% if payUnavailable %}
+    <p class="notice warn" role="alert">The payment page could not be opened just now. Your order is saved; please try again in a moment.</p>
+  {% endif %}
+  {% if canPay %}
+    <form method="post" action="/checkout/pay">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <button type="submit">Pay {{ total }} in Bitcoin</button>
+    </form>
+  {% endif %}
 
   <ul class="summary-lines">
     {% for i in items %}
@@ -17,10 +30,6 @@
   {% if discount %}<p class="cart-row"><span>Discount</span> <span>&minus;{{ discount }}</span></p>{% endif %}
   <p class="cart-row"><span>Shipping</span> <span>{{ shipping }}</span></p>
   <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ total }}</strong></p>
-
-  <p class="notice">Your order is held as awaiting payment. Bitcoin payment is being connected to this
-    store; you will be able to pay from the order page, which you can reach any time with your order
-    number and email.</p>
 </div>
 
 {% endblock %}
