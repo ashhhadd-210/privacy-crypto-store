@@ -26,8 +26,14 @@ docker run -d --rm --name "$name" -e POSTGRES_PASSWORD=drill -e POSTGRES_USER=st
 trap 'docker rm -f "$name" >/dev/null 2>&1 || true' EXIT
 for _ in $(seq 1 30); do docker exec "$name" pg_isready -U store >/dev/null 2>&1 && break; sleep 1; done
 
+# The app container runs as an unprivileged user and cannot read a root-only
+# file, so it gets a readable copy inside a root-only directory, removed after.
+keydir=$(mktemp -d); chmod 700 "$keydir"
+install -m 0644 "$AGE_IDENTITY_FILE" "$keydir/key"
+trap 'docker rm -f "$name" >/dev/null 2>&1 || true; shred -u "$keydir/key" 2>/dev/null; rm -rf "$keydir"' EXIT
+
 cd /opt/davmad
-docker compose run --rm -T --no-deps -v "$AGE_IDENTITY_FILE:/drill-key:ro" -e AGE_IDENTITY_FILE=/drill-key \
+docker compose run --rm -T --no-deps -v "$keydir/key:/drill-key:ro" -e AGE_IDENTITY_FILE=/drill-key \
   app node dist/scripts/age-encrypt.js --decrypt < "$latest" \
   | docker exec -i "$name" psql -q -U store -d store >/dev/null
 

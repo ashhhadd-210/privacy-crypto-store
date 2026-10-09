@@ -101,8 +101,13 @@ export async function buildServer() {
     // applied again at the origin so the guarantee survives a proxy
     // misconfiguration or a direct connection during a deploy.
     contentSecurityPolicy: {
+      // Every directive stated here; helmet's defaults would add
+      // font-src https: (any site's fonts), which ZAP rightly flagged.
+      useDefaults: false,
       directives: {
         defaultSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        scriptSrcAttr: ["'none'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'"],
         imgSrc: ["'self'", 'data:'],
@@ -113,8 +118,11 @@ export async function buildServer() {
         frameAncestors: ["'none'"],
         baseUri: ["'none'"],
         objectSrc: ["'none'"],
+        ...(config.isProduction ? { upgradeInsecureRequests: [] } : {}),
       },
     },
+    // Everything the store serves is its own, so cross-origin embedding can be refused.
+    crossOriginEmbedderPolicy: true,
     hsts: config.isProduction
       ? { maxAge: 31_536_000, includeSubDomains: true, preload: true }
       : false,
@@ -123,6 +131,14 @@ export async function buildServer() {
     // us, and DENY is what the Caddyfile sets at the edge. The two must agree
     // or the weaker one wins wherever it is applied last.
     xFrameOptions: { action: 'deny' },
+  });
+
+  // Set at the edge too (Caddyfile); here so the guarantee holds without the proxy.
+  app.addHook('onSend', async (_request, reply) => {
+    reply.header(
+      'permissions-policy',
+      'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()',
+    );
   });
 
   await app.register(cookie, { secret: config.SESSION_SECRET });

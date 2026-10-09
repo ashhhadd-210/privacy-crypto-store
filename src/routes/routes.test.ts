@@ -245,3 +245,13 @@ test('a 404 reveals nothing about the application', async () => {
   assert.equal(res.statusCode, 404);
   assert.ok(!/stack|at Object|node_modules|\.ts:/i.test(res.body));
 });
+
+test('the app sets a strict policy itself, with no wildcard sources (ZAP 9 Oct)', async () => {
+  const res = await app.inject({ method: 'GET', url: '/' });
+  const csp = String(res.headers['content-security-policy']);
+  assert.ok(!/https:(?!\/\/)|\*|'unsafe-inline'|'unsafe-eval'/.test(csp), csp);
+  assert.match(csp, /font-src 'self'/);
+  assert.match(csp, /script-src-attr 'none'/);
+  assert.equal(res.headers['cross-origin-embedder-policy'], 'require-corp');
+  assert.match(String(res.headers['permissions-policy']), /camera=\(\)/);
+});
