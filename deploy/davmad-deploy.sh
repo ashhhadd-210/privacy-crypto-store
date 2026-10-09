@@ -44,6 +44,7 @@ docker tag "$loaded" "$IMAGE:current"
 install -m 0644 "$work/docker-compose.yml" "$ROOT/docker-compose.yml"
 install -m 0644 "$work/Caddyfile" "$ROOT/Caddyfile"
 [[ -f "$work/davmad-backup.sh" ]] && install -m 0750 "$work/davmad-backup.sh" /usr/local/sbin/davmad-backup
+for f in go-public.sh restore-drill.sh; do [[ -f "$work/$f" ]] && install -m 0750 "$work/$f" "$ROOT/$f"; done
 cd "$ROOT"
 
 ready() {

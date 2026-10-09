@@ -160,7 +160,7 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           docker save davmad-store:${{ github.sha }} -o image.tar
-          tar -cf release.tar image.tar docker-compose.yml Caddyfile -C deploy davmad-backup.sh
+          tar -cf release.tar image.tar docker-compose.yml Caddyfile -C deploy davmad-backup.sh go-public.sh restore-drill.sh
           d="$RUNNER_TEMP/deploy"
           install -m 700 -d "$d"
           printf '%s\n' "$DEPLOY_SSH_KEY" > "$d/key" && chmod 600 "$d/key"
