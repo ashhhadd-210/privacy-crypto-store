@@ -25,7 +25,7 @@ flock -n 9 || { log "another deploy is running"; exit 1; }
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-tar -x -C "$work" --no-same-owner -f - image.tar docker-compose.yml Caddyfile
+tar -x -C "$work" --no-same-owner -f -
 for f in image.tar docker-compose.yml Caddyfile; do
   [[ -f "$work/$f" ]] || { log "release is missing $f"; exit 1; }
 done
@@ -43,6 +43,7 @@ docker tag "$loaded" "$IMAGE:current"
 
 install -m 0644 "$work/docker-compose.yml" "$ROOT/docker-compose.yml"
 install -m 0644 "$work/Caddyfile" "$ROOT/Caddyfile"
+[[ -f "$work/davmad-backup.sh" ]] && install -m 0750 "$work/davmad-backup.sh" /usr/local/sbin/davmad-backup
 cd "$ROOT"
 
 ready() {

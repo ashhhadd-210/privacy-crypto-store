@@ -14,6 +14,8 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+import { isRecipient } from './age.js';
+
 /** 32 raw bytes, base64 encoded. Same rule for every key in the system. */
 const base64Key = z
   .string()
@@ -48,6 +50,12 @@ const schema = z.object({
   BTCPAY_STORE_ID: z.string().optional(),
   BTCPAY_API_KEY: z.string().optional(),
   BTCPAY_WEBHOOK_SECRET: z.string().optional(),
+
+  /** The client's age public key. Exports and backups are locked to it. */
+  EXPORT_AGE_RECIPIENT: z
+    .string()
+    .optional()
+    .refine((v) => v === undefined || v === '' || isRecipient(v), 'must be an age public key (age1...)'),
 });
 
 export type Config = z.infer<typeof schema> & {

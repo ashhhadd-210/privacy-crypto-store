@@ -109,4 +109,34 @@ systemctl daemon-reload
 systemctl enable --now davmad-reconcile.timer >/dev/null 2>&1
 echo "reconcile timer: $(systemctl is-active davmad-reconcile.timer)"
 
+cat > /etc/systemd/system/davmad-backup.service <<'EOF'
+[Unit]
+Description=davmad store: nightly encrypted database backup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/davmad-backup
+EOF
+cat > /etc/systemd/system/davmad-backup.timer <<'EOF'
+[Unit]
+Description=davmad store: encrypted backup every night
+
+[Timer]
+OnCalendar=*-*-* 02:45:00 UTC
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+systemctl daemon-reload
+if grep -q '^EXPORT_AGE_RECIPIENT=age1' /etc/davmad-store/app.env 2>/dev/null; then
+  systemctl enable --now davmad-backup.timer >/dev/null 2>&1
+  echo "backup timer: $(systemctl is-active davmad-backup.timer)"
+else
+  echo "backup timer: NOT enabled until the client's age key is in app.env (backups are never written unencrypted)"
+fi
+
 echo "server ready for deployments"

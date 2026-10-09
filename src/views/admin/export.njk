@@ -1,0 +1,31 @@
+{% extends "layout.njk" %}
+{% block content %}
+{% include "admin/_nav.njk" %}
+
+<h1>Export your orders</h1>
+
+<div class="card-flat" style="max-width: 40rem">
+  <p>Downloads every order the store still holds, with names, emails and delivery addresses, as one
+    file locked to your own key. Keep it offline. The store keeps customer details for
+    {{ retentionDays }} days; your export is how you keep your records for longer without the server
+    holding them.</p>
+
+  {% if recipient %}
+    <p class="muted">Locked to your key <span class="code">{{ recipient }}</span>. Only your secret key
+      can open it; the store cannot.</p>
+    <dl class="stats">
+      <dt>Orders held</dt><dd>{{ total }}</dd>
+      <dt>Not yet exported</dt><dd>{{ notExported }}</dd>
+    </dl>
+    {% if last %}<p class="muted">Last export {{ last.when }} by {{ last.by }}.</p>{% endif %}
+    <form method="post" action="/admin/export">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <button type="submit">Download encrypted export</button>
+    </form>
+    <p class="hint">To open it on your computer: <span class="code">age -d -i your-key.txt store-export-….json.age &gt; orders.json</span></p>
+  {% else %}
+    <p class="notice warn">Export is not set up yet: the store needs your public key (it starts with
+      <span class="code">age1</span>). Your developer sets it once on the server.</p>
+  {% endif %}
+</div>
+{% endblock %}

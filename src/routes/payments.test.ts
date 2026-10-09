@@ -130,7 +130,15 @@ async function webhook(type: string, invoiceId: string, extra: object = {}, opts
 }
 const orderRow = (id: string) => getDb().selectFrom('orders').selectAll().where('id', '=', id).executeTakeFirstOrThrow();
 const stockOf = async (slug: string) => (await getDb().selectFrom('products').select('stock').where('slug', '=', slug).executeTakeFirstOrThrow()).stock;
-const flush = () => processOutbox(getDb(), 50);
+/** Sends what is due and waits until the background sender started by the route has finished too. */
+async function flush() {
+  for (let i = 0; i < 40; i++) {
+    await processOutbox(getDb(), 50);
+    const pending = await getDb().selectFrom('email_outbox').select('id').where('sent_at', 'is', null).where('next_attempt_at', '<=', new Date()).executeTakeFirst();
+    if (pending === undefined) return;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+}
 
 // --- checkout to invoice --------------------------------------------------------
 
@@ -354,6 +362,7 @@ test('the admin sees each invoice, can reopen an expired order, and can resend a
   assert.match(page.body, /Expired unpaid/);
   await admin.post(`/admin/orders/${order.id}/reopen`, {});
   assert.equal((await orderRow(order.id)).status, 'pending');
+  await flush();
   const before = sent.filter((m) => m.to === email).length;
   await admin.post(`/admin/orders/${order.id}/resend`, { kind: 'received' });
   await flush();

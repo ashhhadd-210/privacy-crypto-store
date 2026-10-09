@@ -50,7 +50,7 @@
     <label class="check"><input type="checkbox" name="purge_enabled"{% if values.purge_enabled %} checked{% endif %}>
       Delete automatically every night</label>
     <label class="check"><input type="checkbox" name="export_before_purge"{% if values.export_before_purge %} checked{% endif %}>
-      Require an encrypted export before deleting <span class="muted-inline">(once export is set up)</span></label>
+      Only delete orders that have been exported <span class="muted-inline">(applies once your export key is set; see Export)</span></label>
   </fieldset>
 
   <button type="submit">Save settings</button>

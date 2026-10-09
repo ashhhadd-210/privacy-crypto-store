@@ -34,6 +34,7 @@ import { adminImageRoutes } from './routes/admin-images.js';
 import { adminOrderRoutes } from './routes/admin-orders.js';
 import { adminPromotionRoutes } from './routes/admin-promotions.js';
 import { adminSettingsRoutes } from './routes/admin-settings.js';
+import { adminExportRoutes } from './routes/admin-export.js';
 import { cartRoutes } from './routes/cart.js';
 import { checkoutRoutes } from './routes/checkout.js';
 import { paymentRoutes } from './routes/payments.js';
@@ -208,6 +209,7 @@ export async function buildServer() {
   await app.register(adminOrderRoutes);
   await app.register(adminPromotionRoutes);
   await app.register(adminSettingsRoutes);
+  await app.register(adminExportRoutes);
   await app.register(shopRoutes);
   await app.register(cartRoutes);
   await app.register(checkoutRoutes);

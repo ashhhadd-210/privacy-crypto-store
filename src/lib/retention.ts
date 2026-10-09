@@ -13,6 +13,7 @@
 import type { Kysely, Transaction } from 'kysely';
 
 import type { Database } from './db.js';
+import { loadConfig } from './config.js';
 import { type StoreSettings, getSettings } from './settings.js';
 
 export const FINAL_STATES = ['complete', 'cancelled', 'expired', 'refunded'] as const;
@@ -110,11 +111,15 @@ export async function runPurge(
   }
 
   try {
+    // "Export before deleting": only once the client has a key to export to;
+    // without one the setting cannot be satisfied and retention still wins.
+    const mustExport = settings.export_before_purge && Boolean(loadConfig().EXPORT_AGE_RECIPIENT);
     const due = await db
       .selectFrom('orders')
       .select('id')
       .where('status', 'in', [...FINAL_STATES])
       .where('placed_at', '<', cutoff)
+      .$if(mustExport, (q) => q.where('exported_at', 'is not', null))
       .execute();
     for (const o of due) {
       const wiped = await db.transaction().execute((trx) => wipeOrder(trx, o.id));
