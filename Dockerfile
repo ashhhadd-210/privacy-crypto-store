@@ -39,7 +39,10 @@ WORKDIR /app
 # npm, npx, corepack and yarn ship with the base image but are never used at
 # runtime; removed, they are no longer attack surface (the image scan of
 # 10 Oct found every HIGH finding inside npm's own bundled packages).
-RUN apk upgrade --no-cache && apk add --no-cache tini \n    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \n              /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \n              /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
+RUN apk upgrade --no-cache && apk add --no-cache tini \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+              /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+              /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
 
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build     /app/dist         ./dist
