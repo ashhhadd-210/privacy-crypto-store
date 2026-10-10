@@ -199,7 +199,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     const setup = [
       { label: 'Store name', ok: settings.store_name !== '', detail: settings.store_name || 'Not set: the shop shows "Store"', href: '/admin/settings' },
       { label: 'Products in the shop', ok: Number(visibleCount) > 0, detail: Number(visibleCount) > 0 ? `${visibleCount} visible` : 'None visible yet', href: '/admin/products' },
-      { label: 'Shipping price', ok: settings.shipping_flat_cents > 0, detail: settings.shipping_flat_cents > 0 ? `${formatMoney(settings.shipping_flat_cents)} per order` : 'Free: set a price if you charge', href: '/admin/settings' },
+      { label: 'Shipping price', ok: settings.shipping_flat_cents > 0, detail: settings.shipping_flat_cents > 0 ? `${formatMoney(settings.shipping_flat_cents)} per order${settings.free_shipping_over_cents > 0 ? `, free over ${formatMoney(settings.free_shipping_over_cents)}` : ''}` : 'Free: set a price if you charge', href: '/admin/settings' },
       { label: 'Bitcoin payments', ok: Boolean(config.BTCPAY_URL && config.BTCPAY_STORE_ID), detail: config.BTCPAY_URL && config.BTCPAY_STORE_ID ? 'Payment server linked' : 'Not linked yet', href: null },
       { label: 'Order emails', ok: Boolean(process.env['SMTP_HOST']), detail: process.env['SMTP_HOST'] ? 'Sending' : 'Not set up yet: emails wait in a queue', href: null },
       { label: 'Encrypted backups and export', ok: Boolean(config.EXPORT_AGE_RECIPIENT), detail: config.EXPORT_AGE_RECIPIENT ? 'Locked to your key' : 'Waiting for your backup key', href: '/admin/export' },

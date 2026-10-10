@@ -68,6 +68,7 @@
   {% endif %}
 
   <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ total }}</strong></p>
+  {% if freeShipping %}<p class="free-ship">{{ freeShipping }}</p>{% endif %}
   <p class="muted">Items are not reserved. Stock is checked again at checkout, and shipping is added there.</p>
   <a class="button" href="/checkout">Continue to checkout</a>
 </div>

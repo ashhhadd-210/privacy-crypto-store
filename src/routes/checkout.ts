@@ -35,7 +35,7 @@ import { BtcpayUnavailable } from '../lib/btcpay.js';
 import { emitOrderEvent } from '../lib/order-events.js';
 import { ensureInvoice } from '../lib/payments.js';
 import { STATUS } from './lookup.js';
-import { getSettings } from '../lib/settings.js';
+import { getSettings, shippingFor } from '../lib/settings.js';
 import { lineViews, summaryView } from './cart.js';
 
 const ORDER_COOKIE = 'order';
@@ -66,8 +66,8 @@ function orderNumber(): string {
   return `SO-${pick()}-${pick()}`;
 }
 
-async function shippingCents(db: Kysely<Database> | Transaction<Database>): Promise<number> {
-  return (await getSettings(db)).shipping_flat_cents;
+async function shippingCents(db: Kysely<Database> | Transaction<Database>, itemsCents: number): Promise<number> {
+  return shippingFor(await getSettings(db), itemsCents);
 }
 
 function orderCookie(reply: FastifyReply, orderId: string): FastifyReply {
@@ -101,7 +101,7 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
     // Send them to the cart to see what changed; it rewrites the cookie and explains.
     if (!unchanged(cart, priced) || priced.promoDropped) return reply.redirect('/cart', 303);
 
-    const shipping = await shippingCents(db);
+    const shipping = await shippingCents(db, priced.subtotalCents - priced.discountCents);
     const summary = summaryView(priced, shipping);
     return reply
       .code(Object.keys(errors).length > 0 || notice !== undefined ? 400 : 200)
@@ -181,7 +181,7 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
           const priced = await priceCart(cart, code, trx, { lock: true });
           if (priced.kept.size === 0 || !unchanged(cart, priced) || priced.promoDropped) throw new CartChanged();
 
-          const shipping = await shippingCents(trx);
+          const shipping = await shippingCents(trx, priced.subtotalCents - priced.discountCents);
           const discount = priced.discountCents;
           if (priced.subtotalCents - discount + shipping !== input.expectedTotal) throw new TotalChanged();
 

@@ -708,3 +708,5 @@ body.admin .admin-form { max-width: 46rem; }
   .stat-value { font-size: 1.35rem; }
   .stat-note { font-size: .76rem; }
 }
+.free-ship { margin: .5rem 0 .25rem; padding: .55rem .8rem; border-radius: 10px; font-size: .9rem; font-weight: 600;
+             color: var(--accent); background: var(--accent-soft); border: 1px solid rgb(62 224 143 / .25); }

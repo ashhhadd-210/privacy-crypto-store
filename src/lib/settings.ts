@@ -14,6 +14,8 @@ export interface StoreSettings {
   store_name: string;
   currency: string;
   shipping_flat_cents: number;
+  /** Orders whose items (after discount) reach this amount ship free. 0 = never. */
+  free_shipping_over_cents: number;
   retention_days: number;
   purge_enabled: boolean;
   export_before_purge: boolean;
@@ -25,6 +27,7 @@ export const DEFAULTS: StoreSettings = {
   store_name: '',
   currency: 'USD',
   shipping_flat_cents: 0,
+  free_shipping_over_cents: 0,
   retention_days: 30,
   purge_enabled: true,
   export_before_purge: true,
@@ -72,6 +75,12 @@ export async function saveSettings(
   }
   invalidateSettings();
   return changed;
+}
+
+/** Shipping for an order whose items come to `itemsCents` after any discount. */
+export function shippingFor(s: Pick<StoreSettings, 'shipping_flat_cents' | 'free_shipping_over_cents'>, itemsCents: number): number {
+  if (s.free_shipping_over_cents > 0 && itemsCents >= s.free_shipping_over_cents) return 0;
+  return s.shipping_flat_cents;
 }
 
 export function invalidateSettings(): void {

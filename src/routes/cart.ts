@@ -28,6 +28,7 @@ import { getDb } from '../lib/db.js';
 import { formatMoney } from '../lib/money.js';
 import { type PricedCart, type PricedLine, priceCart, unchanged } from '../lib/pricing.js';
 import { MAX_CODE_LENGTH, describe, findUsablePromotion, normalizeCode } from '../lib/promo.js';
+import { getSettings } from '../lib/settings.js';
 import { imagesFor } from './shop.js';
 
 /** Fixed messages chosen by code, so nothing from the query string is echoed. */
@@ -117,6 +118,14 @@ export async function cartRoutes(app: FastifyInstance): Promise<void> {
     if (priced.promoDropped) writePromoCode(reply, null);
 
     const msg = request.query.msg;
+    // Tell the shopper about free shipping before checkout, and how close they are.
+    const s = await getSettings(db);
+    const items = priced.subtotalCents - priced.discountCents;
+    const freeShipping = s.free_shipping_over_cents > 0 && s.shipping_flat_cents > 0
+      ? items >= s.free_shipping_over_cents
+        ? 'This order ships free.'
+        : `Free shipping on orders over ${formatMoney(s.free_shipping_over_cents)}: ${formatMoney(s.free_shipping_over_cents - items)} to go.`
+      : null;
     return reply.header('cache-control', 'no-store').view('shop/cart.njk', {
       title: 'Your cart',
       bodyClass: 'shop',
@@ -127,6 +136,7 @@ export async function cartRoutes(app: FastifyInstance): Promise<void> {
       lines: await lineViews(priced.lines),
       ...summaryView(priced),
       maxCodeLength: MAX_CODE_LENGTH,
+      freeShipping,
     });
   });
 

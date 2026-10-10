@@ -34,6 +34,12 @@
         {% else %}<p class="hint" id="h-shipping">Added at checkout. 0 means free shipping.</p>{% endif %}
       </div>
     </div>
+    <div class="field{% if errors.free_over %} has-error{% endif %}">
+      <label for="f-free_over">Free shipping on orders over</label>
+      <input id="f-free_over" name="free_over" type="text" inputmode="decimal" maxlength="12" value="{{ values.free_over }}" placeholder="No free shipping" aria-describedby="h-free_over">
+      {% if errors.free_over %}<p class="field-error" id="h-free_over">{{ errors.free_over }}</p>
+      {% else %}<p class="hint" id="h-free_over">When the items in an order (after any discount code) reach this amount, shipping is free. Leave empty to always charge shipping.</p>{% endif %}
+    </div>
   </fieldset>
 
   <fieldset>

@@ -27,7 +27,7 @@ let admin: Visitor;
 let original: Awaited<ReturnType<typeof getSettings>>;
 
 const FORM = (over: Record<string, string> = {}) => ({
-  store_name: 'Probe Goods', currency: 'USD', shipping: '0', retention_days: '30', purge_enabled: 'on', export_before_purge: 'on', ...over,
+  store_name: 'Probe Goods', currency: 'USD', shipping: '0', free_over: '', retention_days: '30', purge_enabled: 'on', export_before_purge: 'on', ...over,
 });
 
 before(async () => {
@@ -92,6 +92,31 @@ test('the shipping rate reaches the checkout total', async () => {
   const page = await shopper.get('/checkout');
   assert.match(page.body, /Shipping<\/span> <span>\$6\.00/);
   assert.match(page.body, /Total<\/span> <strong>\$26\.00/);
+});
+
+test('orders at or over the free-shipping amount ship free', async () => {
+  // The probe product costs $20.00.
+  await admin.post('/admin/settings', FORM({ shipping: '6', free_over: '20' }));
+  invalidateSettings();
+  const over = new Visitor(app, `/p/${SLUG}`);
+  await over.add(SLUG);
+  const free = await over.get('/checkout');
+  assert.match(free.body, /Shipping<\/span> <span>\$0\.00/);
+  assert.match(free.body, /Total<\/span> <strong>\$20\.00/);
+
+  await admin.post('/admin/settings', FORM({ shipping: '6', free_over: '50' }));
+  invalidateSettings();
+  const under = new Visitor(app, `/p/${SLUG}`);
+  await under.add(SLUG);
+  const paid = await under.get('/checkout');
+  assert.match(paid.body, /Shipping<\/span> <span>\$6\.00/);
+  assert.match(paid.body, /Total<\/span> <strong>\$26\.00/);
+
+  await admin.post('/admin/settings', FORM({ shipping: '6', free_over: 'lots' }));
+  invalidateSettings();
+  assert.equal((await getSettings()).free_shipping_over_cents, 5000, 'a bad amount is refused and the old one stands');
+  await admin.post('/admin/settings', FORM());
+  invalidateSettings();
 });
 
 test('bad values are refused and nothing changes', async () => {
