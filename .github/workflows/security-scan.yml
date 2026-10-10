@@ -33,9 +33,13 @@ jobs:
       - name: Build production image
         run: docker build --tag davmad-store:scan .
 
+      # Trivy's own release channel was compromised in March 2026 and every
+      # release from 2022 to then was withdrawn. Pinned to a release published
+      # after the clean-up; this job holds no secrets, so a bad scanner could
+      # not reach the server or the deploy key anyway.
       - name: Install Trivy (pinned, checksum-verified)
         run: |
-          v=0.58.1
+          v=0.74.0
           base="https://github.com/aquasecurity/trivy/releases/download/v$v"
           curl -fsSLO "$base/trivy_${v}_Linux-64bit.tar.gz"
           curl -fsSLO "$base/trivy_${v}_checksums.txt"
@@ -96,7 +100,7 @@ jobs:
           EOF
           img=davmad-store:scan
           docker run --rm --network host --env-file scan.env "$img" node dist/scripts/migrate.js
-          docker run --rm --network host --env-file scan.env "$img" node dist/scripts/seed.js
+          docker run --rm --network host --env-file scan.env "$img" node dist/scripts/seed.js --force
           docker run -d --name store --network host --env-file scan.env "$img"
           for i in $(seq 1 30); do curl -fs http://127.0.0.1:3000/healthz >/dev/null && break; sleep 1; done
           curl -fs http://127.0.0.1:3000/healthz
