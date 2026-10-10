@@ -113,6 +113,8 @@ jobs:
           user=$(docker image inspect --format '{{.Config.User}}' davmad-store:${{ github.sha }})
           echo "Runtime user: $user"
           test "$user" = "node"
+          # No package manager in the runtime image (removed in the Dockerfile).
+          docker run --rm --entrypoint sh davmad-store:${{ github.sha }} -c '! command -v npm && ! command -v npx && ! command -v yarn'
 
       # Tests run from source; production runs compiled code from dist/. This
       # proves the image itself can migrate a database and serve real pages.
