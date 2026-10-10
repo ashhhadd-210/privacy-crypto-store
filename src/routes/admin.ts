@@ -11,6 +11,8 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 import { loadConfig } from '../lib/config.js';
 import { getDb } from '../lib/db.js';
+import { formatMoney } from '../lib/money.js';
+import { getSettings } from '../lib/settings.js';
 import {
   createSession,
   destroySession,
@@ -168,12 +170,49 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       .selectFrom('products')
       .select((eb) => eb.fn.countAll<number>().as('count'))
       .executeTakeFirstOrThrow();
+    const { count: visibleCount } = await db
+      .selectFrom('products')
+      .select((eb) => eb.fn.countAll<number>().as('count'))
+      .where('active', '=', true)
+      .executeTakeFirstOrThrow();
+
+    // Sales in the last 30 days: live orders plus the anonymous records of
+    // orders whose details have already been deleted, so the figure does not
+    // drop when the purge runs.
+    const since = new Date(Date.now() - 30 * 86_400_000);
+    const live = await db
+      .selectFrom('orders')
+      .select((eb) => [eb.fn.countAll<number>().as('n'), eb.fn.coalesce(eb.fn.sum<number>('total_cents'), eb.lit(0)).as('cents')])
+      .where('status', 'in', ['paid', 'shipped', 'complete'])
+      .where('paid_at', '>=', since)
+      .executeTakeFirstOrThrow();
+    const gone = await db
+      .selectFrom('order_aggregates')
+      .select((eb) => [eb.fn.countAll<number>().as('n'), eb.fn.coalesce(eb.fn.sum<number>('total_cents'), eb.lit(0)).as('cents')])
+      .where('was_paid', '=', true)
+      .where('order_date', '>=', since)
+      .executeTakeFirstOrThrow();
+
+    // What is switched on, so the owner can see at a glance what is still to do.
+    const config = loadConfig();
+    const settings = await getSettings(db);
+    const setup = [
+      { label: 'Store name', ok: settings.store_name !== '', detail: settings.store_name || 'Not set: the shop shows "Store"', href: '/admin/settings' },
+      { label: 'Products in the shop', ok: Number(visibleCount) > 0, detail: Number(visibleCount) > 0 ? `${visibleCount} visible` : 'None visible yet', href: '/admin/products' },
+      { label: 'Shipping price', ok: settings.shipping_flat_cents > 0, detail: settings.shipping_flat_cents > 0 ? `${formatMoney(settings.shipping_flat_cents)} per order` : 'Free: set a price if you charge', href: '/admin/settings' },
+      { label: 'Bitcoin payments', ok: Boolean(config.BTCPAY_URL && config.BTCPAY_STORE_ID), detail: config.BTCPAY_URL && config.BTCPAY_STORE_ID ? 'Payment server linked' : 'Not linked yet', href: null },
+      { label: 'Order emails', ok: Boolean(process.env['SMTP_HOST']), detail: process.env['SMTP_HOST'] ? 'Sending' : 'Not set up yet: emails wait in a queue', href: null },
+      { label: 'Encrypted backups and export', ok: Boolean(config.EXPORT_AGE_RECIPIENT), detail: config.EXPORT_AGE_RECIPIENT ? 'Locked to your key' : 'Waiting for your backup key', href: '/admin/export' },
+    ];
 
     return reply.header('cache-control', 'no-store').view('admin/dashboard.njk', {
       title: 'Store administration',
       bodyClass: 'admin',
       email: request.adminUser?.email,
       productCount,
+      sales30: { orders: Number(live.n) + Number(gone.n), total: formatMoney(Number(live.cents) + Number(gone.cents)) },
+      setup,
+      setupDone: setup.filter((s) => s.ok).length,
       toShip: n('paid'),
       awaiting: n('pending'),
       payIssues: Number(attention.n),

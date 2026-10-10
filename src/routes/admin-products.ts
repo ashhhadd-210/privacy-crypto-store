@@ -15,6 +15,7 @@ import { formatMoney } from '../lib/money.js';
 import { FORM_FIELDS, type ProductForm, priceInput, productForm, slugify } from '../lib/product-form.js';
 import { requireAdmin } from './admin.js';
 import { PHOTO_MESSAGES } from './admin-images.js';
+import { imagesFor } from './shop.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -116,6 +117,7 @@ export async function adminProductRoutes(app: FastifyInstance): Promise<void> {
       .orderBy('products.sort_order')
       .orderBy('products.name')
       .execute();
+    const thumbs = await imagesFor(rows.map((r) => r.id));
 
     return reply.header('cache-control', 'no-store').view('admin/products.njk', {
       title: 'Products',
@@ -131,6 +133,7 @@ export async function adminProductRoutes(app: FastifyInstance): Promise<void> {
         low: r.track_stock && r.stock <= 1,
         active: r.active,
         images: Number(r.images),
+        thumb: thumbs.has(r.id) ? `/${thumbs.get(r.id)!.path}` : '/placeholder/no-image.svg',
       })),
     });
   });

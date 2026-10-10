@@ -35,7 +35,7 @@ export const STATUS_LABEL: Record<string, string> = {
   cancelled: 'Cancelled',
   refunded: 'Refunded',
 };
-const FILTERS = ['all', 'paid', 'pending', 'shipped', 'cancelled'] as const;
+const FILTERS = ['all', 'paid', 'pending', 'shipped', 'complete', 'cancelled'] as const;
 
 const PAYMENT_LABEL: Record<string, string> = {
   new: 'Waiting for payment',
@@ -52,6 +52,7 @@ const MESSAGES: Record<string, { text: string; error?: true }> = {
   reopened: { text: 'Order reopened. The customer can pay again from their order page.' },
   resent: { text: 'Email queued. It goes out as soon as the mail service accepts it.' },
   shipped: { text: 'Marked as shipped.' },
+  completed: { text: 'Marked as delivered. The order is complete; its customer details are deleted after your retention period.' },
   cancelled: { text: 'Order cancelled.' },
   noted: { text: 'Note saved.' },
   tracking: { text: 'Enter a tracking number: letters, numbers, spaces and dashes, 3 to 60 characters.', error: true },
@@ -160,6 +161,7 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
         placed: date(o.placed_at),
         paid: date(o.paid_at),
         shipped: date(o.shipped_at),
+        completed: date(o.completed_at),
         tracking: o.tracking_number,
         note: o.admin_note ?? '',
         name: decrypt(o.name_enc, 'orders.name'),
@@ -176,9 +178,10 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
         shipping: formatMoney(o.shipping_cents),
         total: formatMoney(o.total_cents),
         canShip: o.status === 'paid',
+        canComplete: o.status === 'shipped',
         canCancel: o.status === 'pending',
         canReopen: o.status === 'expired',
-        canRefund: o.status === 'paid' || o.status === 'cancelled' || payments.some((p) => p.status === 'overpaid' || p.status === 'underpaid'),
+        canRefund: ['paid', 'shipped', 'complete', 'cancelled'].includes(o.status) || payments.some((p) => p.status === 'overpaid' || p.status === 'underpaid'),
         resendKind: o.status === 'shipped' || o.status === 'complete' ? 'shipped' : o.status === 'paid' ? 'paid' : 'received',
         payments: payments.map((p) => ({
           invoice: p.btcpay_invoice_id,
@@ -212,6 +215,21 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
     await audit(request.adminUser?.email, 'order.ship', id);
     await emitOrderEvent(db, id, 'shipped');
     return reply.redirect(back(id, 'shipped'), 303);
+  });
+
+  app.post<{ Params: { id: string } }>('/admin/orders/:id/complete', guardPost, async (request, reply) => {
+    const { id } = request.params;
+    if (!UUID.test(id)) return reply.callNotFound();
+    const now = new Date();
+    const res = await db
+      .updateTable('orders')
+      .set({ status: 'complete', completed_at: now, updated_at: now })
+      .where('id', '=', id)
+      .where('status', '=', 'shipped')
+      .executeTakeFirst();
+    if (Number(res.numUpdatedRows) === 0) return reply.redirect(back(id, 'conflict'), 303);
+    await audit(request.adminUser?.email, 'order.complete', id);
+    return reply.redirect(back(id, 'completed'), 303);
   });
 
   app.post<{ Params: { id: string } }>('/admin/orders/:id/cancel', guardPost, async (request, reply) => {
@@ -256,7 +274,7 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
       .updateTable('orders')
       .set({ status: 'refunded', updated_at: new Date() })
       .where('id', '=', id)
-      .where('status', 'in', ['paid', 'cancelled', 'pending', 'expired'])
+      .where('status', 'in', ['paid', 'shipped', 'complete', 'cancelled', 'pending', 'expired'])
       .executeTakeFirst();
     if (Number(res.numUpdatedRows) === 0) return reply.redirect(back(id, 'conflict'), 303);
     await audit(request.adminUser?.email, 'order.refunded', id);

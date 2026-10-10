@@ -10,7 +10,7 @@
  * paid for, or is in the post, keeps its delivery details until it is done.
  */
 
-import type { Kysely, Transaction } from 'kysely';
+import { type Kysely, type Transaction, sql } from 'kysely';
 
 import type { Database } from './db.js';
 import { loadConfig } from './config.js';
@@ -76,8 +76,28 @@ export async function recordPurgeRun(trx: Transaction<Database>, run: PurgeRunSu
 }
 
 export interface PurgeResult extends PurgeRunSummary {
-  /** Automatic deletion is switched off in settings; nothing was touched. */
+  /** Automatic deletion is switched off in settings; nothing was deleted. */
   skipped?: true;
+  /** Shipped orders moved to complete on this run (not stored in purge_runs). */
+  orders_completed?: number;
+}
+
+/**
+ * Shipped orders become complete a set number of days after shipping. Without
+ * this step a delivered order would never reach a final state, and so would
+ * keep its customer's details for ever. Runs before the purge, whether or not
+ * deletion is switched on: it is an order status, not a deletion.
+ */
+export async function completeShippedOrders(db: Kysely<Database>, days: number): Promise<number> {
+  const before = new Date(Date.now() - days * 86_400_000);
+  const now = new Date();
+  const res = await db
+    .updateTable('orders')
+    .set({ status: 'complete', completed_at: now, updated_at: now })
+    .where('status', '=', 'shipped')
+    .where('shipped_at', '<', before)
+    .executeTakeFirst();
+  return Number(res.numUpdatedRows ?? 0);
 }
 
 /**
@@ -104,6 +124,8 @@ export async function runPurge(
     triggered_by: triggeredBy,
   };
 
+  result.orders_completed = await completeShippedOrders(db, settings.complete_after_days);
+
   if (triggeredBy === 'schedule' && !settings.purge_enabled) {
     result.skipped = true;
     await db.transaction().execute((trx) => recordPurgeRun(trx, result));
@@ -118,7 +140,9 @@ export async function runPurge(
       .selectFrom('orders')
       .select('id')
       .where('status', 'in', [...FINAL_STATES])
-      .where('placed_at', '<', cutoff)
+      // The clock starts when the order was finished: delivered orders from
+      // completion, everything else from when it was placed.
+      .where(sql<Date>`coalesce(completed_at, placed_at)`, '<', cutoff)
       .$if(mustExport, (q) => q.where('exported_at', 'is not', null))
       .execute();
     for (const o of due) {

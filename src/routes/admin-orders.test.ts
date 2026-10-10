@@ -136,6 +136,27 @@ test('only an unpaid order can be cancelled', async () => {
   assert.equal((await statusOf(paid)).status, 'paid');
 });
 
+test('a shipped order can be marked delivered, and only a shipped one', async () => {
+  const shipped = await order('shipped');
+  const page = await admin.get(`/admin/orders/${shipped}`);
+  assert.match(page.body, /Mark as delivered/);
+  assert.equal((await admin.post(`/admin/orders/${shipped}/complete`, {})).headers['location'], `/admin/orders/${shipped}?msg=completed`);
+  const done = await getDb().selectFrom('orders').select(['status', 'completed_at']).where('id', '=', shipped).executeTakeFirstOrThrow();
+  assert.equal(done.status, 'complete');
+  assert.ok(done.completed_at !== null);
+  assert.doesNotMatch((await admin.get(`/admin/orders/${shipped}`)).body, /Mark as delivered/);
+
+  const paid = await order('paid');
+  assert.equal((await admin.post(`/admin/orders/${paid}/complete`, {})).headers['location'], `/admin/orders/${paid}?msg=conflict`);
+  assert.equal((await statusOf(paid)).status, 'paid');
+});
+
+test('a shipped order can be marked refunded (a return)', async () => {
+  const id = await order('shipped');
+  assert.equal((await admin.post(`/admin/orders/${id}/refunded`, {})).headers['location'], `/admin/orders/${id}?msg=refunded`);
+  assert.equal((await statusOf(id)).status, 'refunded');
+});
+
 test('a staff note is saved, and clearing it removes it', async () => {
   const id = await order('paid');
   await admin.post(`/admin/orders/${id}/note`, { note: 'Gift wrap requested.' });

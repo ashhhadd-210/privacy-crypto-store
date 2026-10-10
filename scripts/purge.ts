@@ -17,6 +17,7 @@ try {
   const run = await runPurge(getDb(), 'schedule');
   console.log(
     `purge: retention ${run.retention_days} days, cutoff ${run.cutoff_at.toISOString()}, ` +
+      `${run.orders_completed ?? 0} shipped orders marked complete, ` +
       `${run.orders_purged} orders, ${run.customers_purged} customers, ${run.webhooks_purged} webhooks` +
       (run.skipped ? ' (disabled in settings, nothing deleted)' : ''),
   );

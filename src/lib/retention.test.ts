@@ -184,3 +184,38 @@ test('an admin-triggered run ignores the schedule switch', async () => {
   assert.equal(run.skipped, undefined);
   assert.equal(await exists('orders', id), false);
 });
+
+test('shipped orders become complete after the set days, then follow the retention clock', async () => {
+  const db = getDb();
+  const old = await order('shipped', 60);
+  const recent = await order('shipped', 60);
+  await db.updateTable('orders').set({ shipped_at: new Date(Date.now() - 20 * DAY) }).where('id', '=', old).execute();
+  await db.updateTable('orders').set({ shipped_at: new Date(Date.now() - 3 * DAY) }).where('id', '=', recent).execute();
+
+  const run = await purge('admin', { complete_after_days: 14, export_before_purge: false });
+  assert.ok((run.orders_completed ?? 0) >= 1);
+
+  const st = async (id: string) => (await db.selectFrom('orders').select(['status', 'completed_at']).where('id', '=', id).executeTakeFirstOrThrow());
+  const o = await st(old);
+  assert.equal(o.status, 'complete');
+  assert.ok(o.completed_at !== null);
+  assert.equal((await st(recent)).status, 'shipped', 'shipped 3 days ago: still in the post');
+
+  // Placed 60 days ago but only just completed: the 30-day clock starts now,
+  // so the details are kept for the return window rather than wiped at once.
+  assert.ok(await exists('orders', old), 'a just-completed order keeps its details for the retention period');
+
+  await db.updateTable('orders').set({ completed_at: new Date(Date.now() - 31 * DAY) }).where('id', '=', old).execute();
+  await purge('admin', { export_before_purge: false });
+  assert.equal(await exists('orders', old), false, 'completed 31 days ago with a 30-day window: wiped');
+});
+
+test('completing shipped orders happens even when scheduled deletion is off', async () => {
+  const db = getDb();
+  const id = await order('shipped', 40);
+  await db.updateTable('orders').set({ shipped_at: new Date(Date.now() - 30 * DAY) }).where('id', '=', id).execute();
+  const run = await purge('schedule', { purge_enabled: false, complete_after_days: 14 });
+  assert.equal(run.skipped, true);
+  assert.equal((await db.selectFrom('orders').select('status').where('id', '=', id).executeTakeFirstOrThrow()).status, 'complete');
+  assert.ok(await exists('orders', id), 'nothing deleted while deletion is off');
+});

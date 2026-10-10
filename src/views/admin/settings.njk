@@ -40,12 +40,21 @@
     <legend>Privacy</legend>
     <div class="field{% if errors.retention_days %} has-error{% endif %}">
       <label for="f-retention_days">Keep customer details for</label>
-      <div class="promo-row" style="max-width: 14rem">
+      <div class="promo-row days-row">
         <input id="f-retention_days" name="retention_days" type="text" inputmode="numeric" maxlength="5" value="{{ values.retention_days }}" aria-describedby="h-retention_days">
-        <span class="muted-inline" style="align-self:center">days</span>
+        <span class="muted-inline">days</span>
       </div>
       {% if errors.retention_days %}<p class="field-error" id="h-retention_days">{{ errors.retention_days }}</p>
       {% else %}<p class="hint" id="h-retention_days">After this many days, finished orders lose their name, email and address. Your sales totals are kept. Orders still being paid for or delivered are never touched.</p>{% endif %}
+    </div>
+    <div class="field{% if errors.complete_after_days %} has-error{% endif %}">
+      <label for="f-complete_after_days">Count shipped orders as delivered after</label>
+      <div class="promo-row days-row">
+        <input id="f-complete_after_days" name="complete_after_days" type="text" inputmode="numeric" maxlength="4" value="{{ values.complete_after_days }}" aria-describedby="h-complete_after_days">
+        <span class="muted-inline">days</span>
+      </div>
+      {% if errors.complete_after_days %}<p class="field-error" id="h-complete_after_days">{{ errors.complete_after_days }}</p>
+      {% else %}<p class="hint" id="h-complete_after_days">A shipped order becomes complete this many days after you mark it shipped, or straight away if you press "Mark as delivered". The deletion period above starts from then.</p>{% endif %}
     </div>
     <label class="check"><input type="checkbox" name="purge_enabled"{% if values.purge_enabled %} checked{% endif %}>
       Delete automatically every night</label>
@@ -56,7 +65,7 @@
   <button type="submit">Save settings</button>
 </form>
 
-<section class="card-flat" style="max-width: 40rem; margin-top: 2rem">
+<section class="card-flat narrow spaced">
   <h2>Deletion history</h2>
   {% if lastRun %}
     <p>Last run {{ lastRun.when }} ({{ lastRun.by }}): {{ lastRun.orders }} order{% if lastRun.orders != 1 %}s{% endif %} and

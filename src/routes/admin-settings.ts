@@ -16,8 +16,8 @@ import { runPurge } from '../lib/retention.js';
 import { type StoreSettings, getSettings, saveSettings } from '../lib/settings.js';
 import { requireAdmin } from './admin.js';
 
-type Values = { store_name: string; currency: string; shipping: string; retention_days: string; purge_enabled: boolean; export_before_purge: boolean };
-type Errors = Partial<Record<'store_name' | 'shipping' | 'retention_days', string>>;
+type Values = { store_name: string; currency: string; shipping: string; retention_days: string; complete_after_days: string; purge_enabled: boolean; export_before_purge: boolean };
+type Errors = Partial<Record<'store_name' | 'shipping' | 'retention_days' | 'complete_after_days', string>>;
 
 const CURRENCIES = ['USD'];
 
@@ -27,6 +27,7 @@ function toValues(s: StoreSettings): Values {
     currency: s.currency,
     shipping: priceInput(s.shipping_flat_cents),
     retention_days: String(s.retention_days),
+    complete_after_days: String(s.complete_after_days),
     purge_enabled: s.purge_enabled,
     export_before_purge: s.export_before_purge,
   };
@@ -39,6 +40,7 @@ function parse(body: Record<string, unknown>): { values: Values; errors: Errors;
     currency: CURRENCIES.includes(str('currency', 3)) ? str('currency', 3) : 'USD',
     shipping: str('shipping', 12),
     retention_days: str('retention_days', 5),
+    complete_after_days: str('complete_after_days', 4),
     purge_enabled: body['purge_enabled'] === 'on',
     export_before_purge: body['export_before_purge'] === 'on',
   };
@@ -48,6 +50,11 @@ function parse(body: Record<string, unknown>): { values: Values; errors: Errors;
   if (shipping === null) errors.shipping = 'Enter an amount like 5 or 5.50, or 0 for free shipping.';
   const retention = Number(values.retention_days);
   if (!Number.isInteger(retention) || retention < 1 || retention > 3650) errors.retention_days = 'Enter a whole number of days from 1 to 3650.';
+  // Optional in the form: left out, the saved value stands.
+  const completeAfter = values.complete_after_days === '' ? undefined : Number(values.complete_after_days);
+  if (completeAfter !== undefined && (!Number.isInteger(completeAfter) || completeAfter < 1 || completeAfter > 365)) {
+    errors.complete_after_days = 'Enter a whole number of days from 1 to 365.';
+  }
   if (Object.keys(errors).length > 0) return { values, errors };
   return {
     values,
@@ -57,6 +64,7 @@ function parse(body: Record<string, unknown>): { values: Values; errors: Errors;
       currency: values.currency,
       shipping_flat_cents: shipping as number,
       retention_days: retention,
+      ...(completeAfter !== undefined ? { complete_after_days: completeAfter } : {}),
       purge_enabled: values.purge_enabled,
       export_before_purge: values.export_before_purge,
     },

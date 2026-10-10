@@ -31,7 +31,15 @@
       <dt>Placed</dt><dd>{{ order.placed }}</dd>
       <dt>Paid</dt><dd>{{ order.paid or '—' }}</dd>
       <dt>Shipped</dt><dd>{{ order.shipped or '—' }}{% if order.tracking %}<br><span class="code">{{ order.tracking }}</span>{% endif %}</dd>
+      <dt>Delivered</dt><dd>{{ order.completed or '—' }}</dd>
     </dl>
+    {% if order.canComplete %}
+    <form method="post" action="/admin/orders/{{ order.id }}/complete" class="timeline-action">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <button type="submit" class="secondary small">Mark as delivered</button>
+      <p class="hint">Otherwise this happens on its own a set number of days after shipping (Settings).</p>
+    </form>
+    {% endif %}
   </section>
 </div>
 

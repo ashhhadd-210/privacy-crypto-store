@@ -3,28 +3,87 @@
 {% block content %}
 {% include "admin/_nav.njk" %}
 
-<h1>Store administration</h1>
-<p class="muted">Signed in as {{ email }} · <a href="/admin/password">Change password</a></p>
+<div class="admin-head">
+  <div>
+    <h1>Overview</h1>
+    <p class="muted">Signed in as {{ email }} · <a href="/admin/password">Change password</a></p>
+  </div>
+  <div class="quick">
+    <a class="button inline" href="/admin/products/new">Add a product</a>
+    <a class="button inline ghost" href="/admin/promotions/new">New discount code</a>
+  </div>
+</div>
 {% if passwordChanged %}<p class="notice" role="status">Password changed. Any other signed-in sessions have been signed out.</p>{% endif %}
-
-<dl class="stats">
-  <dt>To ship</dt><dd><a href="/admin/orders?status=paid">{{ toShip }}</a></dd>
-  <dt>Awaiting payment</dt><dd><a href="/admin/orders?status=pending">{{ awaiting }}</a></dd>
-  <dt>Products</dt><dd><a href="/admin/products">{{ productCount }}</a></dd>
-</dl>
 
 {% if payIssues > 0 %}
 <p class="notice warn">{{ payIssues }} payment{% if payIssues != 1 %}s were{% else %} was{% endif %} for the wrong amount and need{% if payIssues == 1 %}s{% endif %} your attention. <a href="/admin/orders">Open orders</a></p>
 {% endif %}
 
-{% if lowStock.length %}
-<section class="card-flat" style="max-width: 40rem">
-  <h2>Running low</h2>
-  <ul class="email-list">
-    {% for p in lowStock %}<li><a href="/admin/products/{{ p.id }}">{{ p.name }}</a> <span class="{% if p.stock == 0 %}warn-text{% else %}muted-inline{% endif %}">{{ p.stock }} left</span></li>{% endfor %}
-  </ul>
-</section>
-{% endif %}
+<ul class="stat-cards">
+  <li class="stat-card{% if toShip > 0 %} hot{% endif %}">
+    <a href="/admin/orders?status=paid">
+      <span class="stat-label">To ship</span>
+      <span class="stat-value">{{ toShip }}</span>
+      <span class="stat-note">{% if toShip > 0 %}Paid and waiting for you{% else %}All caught up{% endif %}</span>
+    </a>
+  </li>
+  <li class="stat-card">
+    <a href="/admin/orders?status=pending">
+      <span class="stat-label">Awaiting payment</span>
+      <span class="stat-value">{{ awaiting }}</span>
+      <span class="stat-note">Invoices still open</span>
+    </a>
+  </li>
+  <li class="stat-card">
+    <a href="/admin/orders">
+      <span class="stat-label">Sales, last 30 days</span>
+      <span class="stat-value">{{ sales30.total }}</span>
+      <span class="stat-note">{{ sales30.orders }} paid order{% if sales30.orders != 1 %}s{% endif %}</span>
+    </a>
+  </li>
+  <li class="stat-card">
+    <a href="/admin/products">
+      <span class="stat-label">Products</span>
+      <span class="stat-value">{{ productCount }}</span>
+      <span class="stat-note">Add, edit, hide or restock</span>
+    </a>
+  </li>
+</ul>
 
-<p class="muted">{% if lastPurge %}Last automatic deletion: {{ lastPurge.when }}, {{ lastPurge.orders }} order{% if lastPurge.orders != 1 %}s{% endif %} cleared.{% if lastPurge.error %} <span class="warn-text">It reported an error; see Settings.</span>{% endif %}{% else %}Automatic deletion has not run yet.{% endif %}</p>
+<div class="dash-grid">
+  <section class="card-flat">
+    <div class="card-head">
+      <h2>Store setup</h2>
+      <span class="pill{% if setupDone == setup.length %} on{% endif %}">{{ setupDone }} of {{ setup.length }} ready</span>
+    </div>
+    <ul class="checklist">
+      {% for s in setup %}
+      <li class="{{ 'ok' if s.ok else 'todo' }}">
+        <span class="check-mark" aria-hidden="true"></span>
+        <span class="check-text"><strong>{% if s.href %}<a href="{{ s.href }}">{{ s.label }}</a>{% else %}{{ s.label }}{% endif %}</strong><span>{{ s.detail }}</span></span>
+        <span class="visually-hidden">{{ 'Ready' if s.ok else 'Not ready' }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <div class="dash-side">
+    <section class="card-flat">
+      <h2>Running low</h2>
+      {% if lowStock.length %}
+      <ul class="email-list">
+        {% for p in lowStock %}<li><a href="/admin/products/{{ p.id }}">{{ p.name }}</a> <span class="{% if p.stock == 0 %}warn-text{% else %}muted-inline{% endif %}">{% if p.stock == 0 %}sold out{% else %}{{ p.stock }} in stock{% endif %}</span></li>{% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">Nothing is running low.</p>
+      {% endif %}
+    </section>
+
+    <section class="card-flat">
+      <h2>Privacy</h2>
+      <p class="muted">{% if lastPurge %}Last automatic deletion: {{ lastPurge.when }}, {{ lastPurge.orders }} order{% if lastPurge.orders != 1 %}s{% endif %} cleared.{% if lastPurge.error %} <span class="warn-text">It reported an error; see Settings.</span>{% endif %}{% else %}Automatic deletion has not run yet.{% endif %}</p>
+      <p class="muted"><a href="/admin/settings">Retention settings</a> · <a href="/admin/export">Encrypted export</a></p>
+    </section>
+  </div>
+</div>
 {% endblock %}

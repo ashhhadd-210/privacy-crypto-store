@@ -17,6 +17,8 @@ export interface StoreSettings {
   retention_days: number;
   purge_enabled: boolean;
   export_before_purge: boolean;
+  /** Shipped orders count as delivered (complete) this many days after shipping. */
+  complete_after_days: number;
 }
 
 export const DEFAULTS: StoreSettings = {
@@ -26,6 +28,7 @@ export const DEFAULTS: StoreSettings = {
   retention_days: 30,
   purge_enabled: true,
   export_before_purge: true,
+  complete_after_days: 14,
 };
 
 const CACHE_MS = 15_000;

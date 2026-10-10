@@ -9,7 +9,10 @@
 </div>
 
 {% if products.length == 0 %}
-  <p class="muted">No products yet.</p>
+  <div class="empty">
+    <p class="empty-title">No products yet.</p>
+    <p class="muted">Add your first product: name, price, stock and photos. It appears in the shop as soon as it is visible.</p>
+  </div>
 {% else %}
 <table class="admin-table">
   <thead>
@@ -18,7 +21,7 @@
   <tbody>
     {% for p in products %}
     <tr>
-      <td><a href="/admin/products/{{ p.id }}">{{ p.name }}</a></td>
+      <td><a class="prod-cell" href="/admin/products/{{ p.id }}"><img src="{{ p.thumb }}" alt="" width="44" height="44" loading="lazy"><span>{{ p.name }}</span></a></td>
       <td>{{ p.price }}</td>
       <td{% if p.low %} class="warn-text"{% endif %}>{{ p.stock }}</td>
       <td>{{ p.images }}</td>
