@@ -122,7 +122,8 @@ test('the restricted flag changes nothing a customer can see', async () => {
   const structure = (html: string): string =>
     html
       .replace(/<img[^>]*>/g, '<img>')
-      .replace(/ (?:src|alt|href|value|content)="[^"]*"/g, '')
+      // max is the quantity box's limit, which follows the product's stock.
+      .replace(/ (?:src|alt|href|value|content|max)="[^"]*"/g, '')
       .replace(/>[^<]*</g, '><')
       .replace(/\s+/g, ' ')
       .trim();

@@ -37,6 +37,24 @@
     {{ field('stock', 'Stock', 'How many you have to sell.', max=7, inputmode='numeric') }}
   </div>
 
+  <fieldset class="bulk-prices">
+    <legend>Bulk prices <span class="muted-inline">(optional)</span></legend>
+    <p class="hint">Customers buying at least this many pay this price for each one. Up to three rows; larger quantities must cost less each. Leave empty for no bulk price.</p>
+    {% if errors.tiers %}<p class="field-error" role="alert">{{ errors.tiers }}</p>{% endif %}
+    {% for row in tiers %}
+    <div class="tier-row">
+      <div class="field{% if errors.tiers %} has-error{% endif %}">
+        <label for="f-tier_qty_{{ loop.index }}">Buy at least</label>
+        <input id="f-tier_qty_{{ loop.index }}" name="tier_qty_{{ loop.index }}" type="text" inputmode="numeric" maxlength="3" value="{{ row.qty }}" placeholder="e.g. {{ [10, 25, 50][loop.index0] }}">
+      </div>
+      <div class="field{% if errors.tiers %} has-error{% endif %}">
+        <label for="f-tier_price_{{ loop.index }}">Price each (USD)</label>
+        <input id="f-tier_price_{{ loop.index }}" name="tier_price_{{ loop.index }}" type="text" inputmode="decimal" maxlength="12" value="{{ row.price }}">
+      </div>
+    </div>
+    {% endfor %}
+  </fieldset>
+
   <label class="check"><input type="checkbox" name="track_stock"{% if values.track_stock %} checked{% endif %}>
     Count stock <span class="muted-inline">(untick for made-to-order items: they never sell out)</span></label>
   <label class="check"><input type="checkbox" name="active"{% if values.active %} checked{% endif %}>

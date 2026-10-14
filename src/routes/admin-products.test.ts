@@ -156,7 +156,10 @@ test('unticking "count stock" makes a product never sell out', async () => {
 });
 
 test('mistakes are explained, what was typed is kept, and nothing is saved', async () => {
-  const before = await getDb().selectFrom('products').select((eb) => eb.fn.countAll<number>().as('n')).executeTakeFirstOrThrow();
+  // Counted through this admin's audit trail, not the whole products table:
+  // other test files add and remove products in parallel.
+  const creates = async () => Number((await getDb().selectFrom('audit_log').select((eb) => eb.fn.countAll<number>().as('n')).where('actor', '=', EMAIL).where('action', '=', 'product.create').executeTakeFirstOrThrow()).n);
+  const before = await creates();
   const res = await admin.post('/admin/products', { ...FORM, name: '', price: '24.555', stock: '-3', slug: 'Not A Slug!' });
   assert.equal(res.statusCode, 400);
   assert.match(res.body, /Nothing was saved/);
@@ -165,8 +168,7 @@ test('mistakes are explained, what was typed is kept, and nothing is saved', asy
   assert.match(res.body, /Stock cannot be negative/);
   assert.match(res.body, /lower-case letters, numbers and single dashes/);
   assert.match(res.body, /value="24\.555"/);
-  const after = await getDb().selectFrom('products').select((eb) => eb.fn.countAll<number>().as('n')).executeTakeFirstOrThrow();
-  assert.equal(Number(after.n), Number(before.n));
+  assert.equal(await creates(), before);
 });
 
 test('product text is shown back escaped, in the admin as in the shop', async () => {

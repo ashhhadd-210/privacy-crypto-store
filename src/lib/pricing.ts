@@ -9,13 +9,17 @@ import type { Kysely, Transaction } from 'kysely';
 
 import { type Cart, MAX_QTY } from './cart.js';
 import { type Database, getDb } from './db.js';
+import { percentOff, spendPercent, spendTiers, tiersFor, unitPrice } from './discounts.js';
 import { type Promotion, discountCents, findUsablePromotion } from './promo.js';
+import { getSettings } from './settings.js';
 
 export interface PricedLine {
   productId: string;
   slug: string;
   name: string;
   unitPriceCents: number;
+  /** The normal price; above unitPriceCents when a bulk price applies. */
+  basePriceCents: number;
   qty: number;
   maxQty: number;
   lineTotalCents: number;
@@ -30,6 +34,12 @@ export interface PricedCart {
   promotion: Promotion | null;
   /** A code was present but is no longer usable. */
   promoDropped: boolean;
+  /** Order discount (by order total), in percent and cents. */
+  spendPercent: number;
+  spendDiscountCents: number;
+  /** What the discount code takes off, after the order discount. */
+  promoDiscountCents: number;
+  /** Everything taken off: order discount plus code. */
   discountCents: number;
 }
 
@@ -50,6 +60,7 @@ export async function priceCart(
   if (lock) query = query.forUpdate();
   const rows = await query.execute();
   const byId = new Map(rows.map((r) => [r.id, r]));
+  const tiers = await tiersFor(rows.map((r) => r.id), db);
 
   const kept: Cart = new Map();
   const notices: string[] = [];
@@ -71,15 +82,17 @@ export async function priceCart(
     const qty = Math.min(wanted, cap);
     if (qty < wanted) notices.push(`Only ${p.stock} of ${p.name} left, so your quantity was reduced.`);
     kept.set(id, qty);
-    subtotalCents += p.price_cents * qty;
+    const unit = unitPrice(p.price_cents, tiers.get(id) ?? [], qty);
+    subtotalCents += unit * qty;
     lines.push({
       productId: id,
       slug: p.slug,
       name: p.name,
-      unitPriceCents: p.price_cents,
+      unitPriceCents: unit,
+      basePriceCents: p.price_cents,
       qty,
       maxQty: cap,
-      lineTotalCents: p.price_cents * qty,
+      lineTotalCents: unit * qty,
     });
   }
 
@@ -95,6 +108,14 @@ export async function priceCart(
   const promoDropped = code !== null && promotion === null;
   if (promoDropped) notices.push('Your discount code is no longer valid and was removed.');
 
+  // Order discount first, on the items after bulk prices; then the code, on
+  // what is left. The code's minimum is checked against the items total.
+  const pct = spendPercent(spendTiers(await getSettings(db)), subtotalCents);
+  const spendDiscountCents = percentOff(subtotalCents, pct);
+  const remaining = subtotalCents - spendDiscountCents;
+  const promoDiscountCents =
+    promotion === null || subtotalCents < promotion.minSubtotalCents ? 0 : discountCents({ ...promotion, minSubtotalCents: 0 }, remaining);
+
   return {
     kept,
     lines,
@@ -102,7 +123,10 @@ export async function priceCart(
     subtotalCents,
     promotion,
     promoDropped,
-    discountCents: promotion === null ? 0 : discountCents(promotion, subtotalCents),
+    spendPercent: pct,
+    spendDiscountCents,
+    promoDiscountCents,
+    discountCents: spendDiscountCents + promoDiscountCents,
   };
 }
 

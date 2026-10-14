@@ -710,3 +710,19 @@ body.admin .admin-form { max-width: 46rem; }
 }
 .free-ship { margin: .5rem 0 .25rem; padding: .55rem .8rem; border-radius: 10px; font-size: .9rem; font-weight: 600;
              color: var(--accent); background: var(--accent-soft); border: 1px solid rgb(62 224 143 / .25); }
+
+/* Bulk prices and order discounts (14 Oct) */
+.bulk { margin: 0 0 1.25rem; padding: .85rem 1rem; border: 1px solid rgb(62 224 143 / .3); border-radius: 14px; background: var(--accent-soft); max-width: 24rem; }
+.bulk-title { margin: 0 0 .45rem; font-weight: 700; font-size: .92rem; color: var(--accent); }
+.bulk ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
+.bulk li { display: flex; justify-content: space-between; gap: 1rem; font-size: .92rem; }
+.buy { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; }
+.buy-qty { display: grid; gap: .3rem; }
+.buy-qty label { margin: 0; font-size: .82rem; color: var(--muted); }
+.buy-qty input { width: 5.5rem; }
+.buy button { flex: 1 1 12rem; }
+.bulk-tag { display: inline-block; margin-inline-start: .35rem; padding: .05rem .45rem; border-radius: 999px; font-size: .74rem; font-weight: 700;
+            color: var(--accent); background: var(--accent-soft); }
+.tier-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+.tier-row .field label { margin-top: .6rem; }
+.bulk-prices { margin-top: 1.25rem; }

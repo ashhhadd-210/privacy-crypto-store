@@ -78,6 +78,13 @@ export interface ProductsTable {
   updated_at: Generated<Date>;
 }
 
+export interface ProductPriceTiersTable {
+  id: Generated<string>;
+  product_id: string;
+  min_qty: number;
+  price_cents: number;
+}
+
 export interface ProductImagesTable {
   id: Generated<string>;
   product_id: string;
@@ -240,6 +247,7 @@ export interface Database {
   settings: SettingsTable;
   products: ProductsTable;
   product_images: ProductImagesTable;
+  product_price_tiers: ProductPriceTiersTable;
   promotions: PromotionsTable;
   orders: OrdersTable;
   order_items: OrderItemsTable;

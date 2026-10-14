@@ -61,6 +61,7 @@
       {% endfor %}
     </ul>
     <p class="cart-row"><span>Subtotal</span> <span>{{ subtotal }}</span></p>
+    {% if spend %}<p class="cart-row"><span>Order discount ({{ spend.percent }}%)</span> <span>&minus;{{ spend.discount }}</span></p>{% endif %}
     {% if promo and promo.discountCents > 0 %}
       <p class="cart-row"><span>Discount <span class="code">{{ promo.code }}</span></span> <span>&minus;{{ promo.discount }}</span></p>
     {% endif %}
