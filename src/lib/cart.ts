@@ -16,7 +16,7 @@ import { loadConfig } from './config.js';
 export const CART_COOKIE = 'cart';
 export const PROMO_COOKIE = 'promo';
 export const MAX_LINES = 20;
-export const MAX_QTY = 10;
+export const MAX_QTY = 99;
 
 export type Cart = Map<string, number>;
 

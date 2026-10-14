@@ -56,14 +56,14 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
  * customer's browser must be sent to BTCPay's public address. Rewrite the
  * link's origin so it never points at an internal host name.
  */
-function publicLink(link: string): string {
-  const pub = loadConfig().BTCPAY_PUBLIC_URL;
+export function publicLink(link: string, pub: string | undefined = loadConfig().BTCPAY_PUBLIC_URL): string {
   if (!pub) return link;
   const u = new URL(link);
-  const p = new URL(pub);
-  u.protocol = p.protocol;
-  u.host = p.host;
-  return u.toString();
+  // Rebuilt on the public origin rather than edited in place: assigning
+  // url.host without a port keeps the old port, which sent customers to
+  // https://pay.<domain>:49392 (BTCPay's internal port; the browser blocked it
+  // under form-action, and it is not reachable from outside anyway). 14 Oct.
+  return new URL(u.pathname + u.search + u.hash, new URL(pub).origin).toString();
 }
 
 export async function createInvoice(opts: {
