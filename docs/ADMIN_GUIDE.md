@@ -51,14 +51,22 @@ difference, then carry on as normal.
   main one; *Make main* changes that.
 - **Count stock**: untick it for made-to-order items. They never sell out.
 - There is no delete. Untick *Visible in the shop* instead; old orders still show what was bought.
-- Customers can order up to 99 of a product (or your stock, if lower); they set the quantity
-  in the cart.
+- **Bulk prices** (optional, on each product): up to three rows of "buy at least N, pay X each".
+  Example: 10 or more at $20, 25 or more at $18. Larger quantities must cost less each. The
+  product page shows them under the price, and the cart applies them automatically.
+- Customers choose a quantity on the product page, up to 99 per product (or your stock, if
+  lower).
 
 ## Discount codes
 
 Create a code, choose a percentage or a fixed amount, and optionally a minimum spend, a limit on
 uses, and first and last days. Untick *Switched on* to stop a code immediately. A use is counted
 only when an order is paid.
+
+**Discounts by order total** are in Settings: up to three rows of "orders of at least $A get
+P% off", for example $500 → 10% and $1000 → 20%. They are worked out on the items after bulk
+prices, the highest one reached applies (not both), and a discount code still works on top of
+what is left. The cart tells customers how much more they need for the next discount.
 
 ## Pages
 
@@ -71,6 +79,7 @@ return policy. This text is a starting point, not legal advice.
 
 - **Store name**, **flat shipping** (0 for free shipping) and **free shipping on orders over** an
   amount (empty for never).
+- **Discounts by order total**: see Discount codes above.
 - **Keep customer details for N days.** After that, finished orders lose their name, email and
   address automatically every night. For a delivered order the days count from delivery, so you
   keep the address through any return.
