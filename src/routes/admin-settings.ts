@@ -16,13 +16,48 @@ import { runPurge } from '../lib/retention.js';
 import { type StoreSettings, getSettings, saveSettings } from '../lib/settings.js';
 import { requireAdmin } from './admin.js';
 
-type Values = { store_name: string; currency: string; shipping: string; free_over: string; retention_days: string; complete_after_days: string; purge_enabled: boolean; export_before_purge: boolean };
-type Errors = Partial<Record<'store_name' | 'shipping' | 'free_over' | 'retention_days' | 'complete_after_days', string>>;
+type SpendRow = { over: string; pct: string };
+type Values = { spend: SpendRow[]; store_name: string; currency: string; shipping: string; free_over: string; retention_days: string; complete_after_days: string; purge_enabled: boolean; export_before_purge: boolean };
+type Errors = Partial<Record<'store_name' | 'shipping' | 'free_over' | 'spend' | 'retention_days' | 'complete_after_days', string>>;
+
+const SPEND_KEYS = [
+  ['spend1_over_cents', 'spend1_percent'],
+  ['spend2_over_cents', 'spend2_percent'],
+  ['spend3_over_cents', 'spend3_percent'],
+] as const;
+
+/**
+ * Discounts by order total. Optional in the form (left out, the saved tiers
+ * stand). A row is both fields or neither; larger orders get more off.
+ */
+function parseSpend(body: Record<string, unknown>, rows: SpendRow[]): { error?: string; data?: Partial<StoreSettings> } {
+  if (body['spend_over_1'] === undefined) return {};
+  const tiers: { over: number; pct: number }[] = [];
+  const data: Partial<StoreSettings> = {};
+  for (const [i, r] of rows.entries()) {
+    const [overKey, pctKey] = SPEND_KEYS[i]!;
+    if (r.over === '' && r.pct === '') { Object.assign(data, { [overKey]: 0, [pctKey]: 0 }); continue; }
+    if (r.over === '' || r.pct === '') return { error: 'Fill in both the amount and the percentage on each row, or leave both empty.' };
+    const over = parsePrice(r.over);
+    if (over === null || over === 0) return { error: 'Enter order amounts like 500 or 1000.' };
+    const pct = Number(r.pct.replace(/%$/, ''));
+    if (!Number.isInteger(pct) || pct < 1 || pct > 90) return { error: 'Percentages are whole numbers from 1 to 90.' };
+    tiers.push({ over, pct });
+    Object.assign(data, { [overKey]: over, [pctKey]: pct });
+  }
+  const sorted = [...tiers].sort((a, b) => a.over - b.over);
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i]!.over === sorted[i - 1]!.over) return { error: 'Each row needs a different order amount.' };
+    if (sorted[i]!.pct <= sorted[i - 1]!.pct) return { error: 'Larger orders should get a larger percentage off.' };
+  }
+  return { data };
+}
 
 const CURRENCIES = ['USD'];
 
 function toValues(s: StoreSettings): Values {
   return {
+    spend: SPEND_KEYS.map(([o, p]) => (s[o] > 0 && s[p] > 0 ? { over: priceInput(s[o]), pct: String(s[p]) } : { over: '', pct: '' })),
     store_name: s.store_name,
     currency: s.currency,
     shipping: priceInput(s.shipping_flat_cents),
@@ -37,6 +72,7 @@ function toValues(s: StoreSettings): Values {
 function parse(body: Record<string, unknown>): { values: Values; errors: Errors; data?: Partial<StoreSettings> } {
   const str = (k: string, max: number) => (typeof body[k] === 'string' ? (body[k] as string).trim().slice(0, max) : '');
   const values: Values = {
+    spend: [1, 2, 3].map((i) => ({ over: str(`spend_over_${i}`, 12), pct: str(`spend_pct_${i}`, 4) })),
     store_name: str('store_name', 60),
     currency: CURRENCIES.includes(str('currency', 3)) ? str('currency', 3) : 'USD',
     shipping: str('shipping', 12),
@@ -53,6 +89,8 @@ function parse(body: Record<string, unknown>): { values: Values; errors: Errors;
   // Optional in the form: left out, the saved value stands. Empty or 0 switches it off.
   const freeOver = body['free_over'] === undefined ? undefined : values.free_over === '' ? 0 : parsePrice(values.free_over);
   if (freeOver === null) errors.free_over = 'Enter an amount like 300, or leave it empty for no free shipping.';
+  const spend = parseSpend(body, values.spend);
+  if (spend.error !== undefined) errors.spend = spend.error;
   const retention = Number(values.retention_days);
   if (!Number.isInteger(retention) || retention < 1 || retention > 3650) errors.retention_days = 'Enter a whole number of days from 1 to 3650.';
   // Optional in the form: left out, the saved value stands.
@@ -69,6 +107,7 @@ function parse(body: Record<string, unknown>): { values: Values; errors: Errors;
       currency: values.currency,
       shipping_flat_cents: shipping as number,
       ...(freeOver !== undefined && freeOver !== null ? { free_shipping_over_cents: freeOver } : {}),
+      ...(spend.data ?? {}),
       retention_days: retention,
       ...(completeAfter !== undefined ? { complete_after_days: completeAfter } : {}),
       purge_enabled: values.purge_enabled,

@@ -30,10 +30,23 @@
       {% endif %}
     </div>
 
+    {% if bulk.length %}
+    <div class="bulk">
+      <p class="bulk-title">Buy more, pay less</p>
+      <ul>
+        {% for t in bulk %}<li><span>{{ t.minQty }} or more</span> <strong>{{ t.price }} each</strong></li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
     {% if product.inStock %}
       <form method="post" action="/cart/add" class="buy">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}">
         <input type="hidden" name="slug" value="{{ product.slug }}">
+        <div class="buy-qty">
+          <label for="f-qty">Quantity</label>
+          <input id="f-qty" name="qty" type="number" inputmode="numeric" min="1" max="{{ maxQty }}" value="1" required>
+        </div>
         <button type="submit">Add to cart</button>
       </form>
     {% else %}

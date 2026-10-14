@@ -144,3 +144,66 @@ test('the purge can be run from the settings page', async () => {
   const run = await getDb().selectFrom('purge_runs').select('triggered_by').orderBy('ran_at', 'desc').limit(1).executeTakeFirstOrThrow();
   assert.equal(run.triggered_by, 'admin');
 });
+
+// --- discounts by order total (14 Oct) -----------------------------------------
+// Thresholds far above any other test file's cart, so files running in
+// parallel never see them.
+
+const BIG = `settings-big-${RUN}`;
+const SPEND_ON = { spend_over_1: '5000', spend_pct_1: '10', spend_over_2: '8000', spend_pct_2: '20', spend_over_3: '', spend_pct_3: '' };
+const SPEND_OFF = { spend_over_1: '', spend_pct_1: '', spend_over_2: '', spend_pct_2: '', spend_over_3: '', spend_pct_3: '' };
+
+test('orders over an amount get the percentage off, and a code still applies on top', async () => {
+  const db = getDb();
+  await db.insertInto('products').values({ slug: BIG, name: 'Settings Big Probe', price_cents: 60_000, stock: 50, active: true }).execute();
+  const code = `SPEND10-${RUN}`.toUpperCase();
+  await db.insertInto('promotions').values({ code, type: 'percent', value: 10 }).execute();
+  try {
+    assert.equal((await admin.post('/admin/settings', FORM(SPEND_ON))).headers['location'], '/admin/settings?saved=1');
+    invalidateSettings();
+    const s = await getSettings();
+    assert.deepEqual([s.spend1_over_cents, s.spend1_percent, s.spend2_over_cents, s.spend2_percent], [500_000, 10, 800_000, 20]);
+
+    const shopper = new Visitor(app, `/p/${BIG}`);
+    await shopper.add(BIG, 9); // $5,400
+    let cart = (await shopper.get('/cart')).body;
+    assert.match(cart, /Order discount <span class="muted-inline">10% off<\/span><\/span> <span>&minus;\$540\.00/);
+    assert.match(cart, /Spend \$2,600\.00 more for 20% off your order\./);
+    assert.match(cart, /Total<\/span> <strong>\$4,860\.00/);
+
+    await shopper.post('/cart/promo', { code });
+    cart = (await shopper.get('/cart')).body;
+    // The code takes 10% of what is left after the order discount: $486.
+    assert.match(cart, /&minus;\$486\.00/);
+    assert.match(cart, /Total<\/span> <strong>\$4,374\.00/);
+
+    const checkout = (await shopper.get('/checkout')).body;
+    assert.match(checkout, /Order discount \(10%\)<\/span> <span>&minus;\$540\.00/);
+
+    const bigger = new Visitor(app, `/p/${BIG}`);
+    await bigger.add(BIG, 14); // $8,400: the 20% tier, not 10% + 20%
+    assert.match((await bigger.get('/cart')).body, /20% off<\/span><\/span> <span>&minus;\$1,680\.00/);
+  } finally {
+    await admin.post('/admin/settings', FORM(SPEND_OFF));
+    invalidateSettings();
+    await db.deleteFrom('products').where('slug', '=', BIG).execute();
+    await db.deleteFrom('promotions').where('code', '=', code).execute();
+  }
+  assert.equal((await getSettings()).spend1_percent, 0, 'empty rows switch the discount off');
+});
+
+test('order-total discounts that make no sense are refused', async () => {
+  const before = await getSettings();
+  for (const [rows, message] of [
+    [{ ...SPEND_OFF, spend_over_1: '5000' }, /both the amount and the percentage/],
+    [{ ...SPEND_OFF, spend_over_1: '5000', spend_pct_1: '95' }, /from 1 to 90/],
+    [{ ...SPEND_OFF, spend_over_1: '5000', spend_pct_1: '20', spend_over_2: '8000', spend_pct_2: '10' }, /larger percentage off/],
+    [{ ...SPEND_OFF, spend_over_1: '5000', spend_pct_1: '10', spend_over_2: '5000', spend_pct_2: '20' }, /different order amount/],
+  ] as const) {
+    const res = await admin.post('/admin/settings', FORM(rows));
+    assert.equal(res.statusCode, 400);
+    assert.match(res.body, message);
+  }
+  invalidateSettings();
+  assert.equal((await getSettings()).spend1_over_cents, before.spend1_over_cents);
+});
