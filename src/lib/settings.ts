@@ -16,13 +16,6 @@ export interface StoreSettings {
   shipping_flat_cents: number;
   /** Orders whose items (after discount) reach this amount ship free. 0 = never. */
   free_shipping_over_cents: number;
-  /** Discounts by order total: up to three "orders of at least X get P% off". 0 = unused. */
-  spend1_over_cents: number;
-  spend1_percent: number;
-  spend2_over_cents: number;
-  spend2_percent: number;
-  spend3_over_cents: number;
-  spend3_percent: number;
   retention_days: number;
   purge_enabled: boolean;
   export_before_purge: boolean;
@@ -35,12 +28,6 @@ export const DEFAULTS: StoreSettings = {
   currency: 'USD',
   shipping_flat_cents: 0,
   free_shipping_over_cents: 0,
-  spend1_over_cents: 0,
-  spend1_percent: 0,
-  spend2_over_cents: 0,
-  spend2_percent: 0,
-  spend3_over_cents: 0,
-  spend3_percent: 0,
   retention_days: 30,
   purge_enabled: true,
   export_before_purge: true,

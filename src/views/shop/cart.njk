@@ -18,7 +18,7 @@
     </a>
     <div class="cart-info">
       <a class="cart-name" href="/p/{{ line.slug }}">{{ line.name }}</a>
-      <p class="stock">{{ line.unitPrice }} each{% if line.basePrice %} <span class="bulk-tag">bulk price</span> <s class="muted-inline">{{ line.basePrice }}</s>{% endif %}</p>
+      <p class="stock">{{ line.unitPrice }} each</p>
       <div class="cart-actions">
         <form method="post" action="/cart/update" class="qty-form">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}">
@@ -42,7 +42,6 @@
 
 <div class="cart-summary">
   <p class="cart-subtotal"><span>Subtotal</span> <span>{{ subtotal }}</span></p>
-  {% if spend %}<p class="cart-row"><span>Order discount <span class="muted-inline">{{ spend.percent }}% off</span></span> <span>&minus;{{ spend.discount }}</span></p>{% endif %}
 
   {% if promo %}
     <div class="promo-applied">
@@ -69,7 +68,6 @@
   {% endif %}
 
   <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ total }}</strong></p>
-  {% if spendHint %}<p class="free-ship">{{ spendHint }}</p>{% endif %}
   {% if freeShipping %}<p class="free-ship">{{ freeShipping }}</p>{% endif %}
   <p class="muted">Items are not reserved. Stock is checked again at checkout, and shipping is added there.</p>
   <a class="button" href="/checkout">Continue to checkout</a>

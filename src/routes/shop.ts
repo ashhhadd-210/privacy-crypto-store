@@ -18,9 +18,8 @@
 
 import type { FastifyInstance } from 'fastify';
 
-import { MAX_QTY, itemCount, readCart } from '../lib/cart.js';
+import { itemCount, readCart } from '../lib/cart.js';
 import { getDb } from '../lib/db.js';
-import { tiersFor } from '../lib/discounts.js';
 import { formatMoney } from '../lib/money.js';
 
 /** What a template needs to render one product. No database shapes leak into views. */
@@ -146,8 +145,6 @@ export async function shopRoutes(app: FastifyInstance): Promise<void> {
     const requested = Number(request.query.img);
     const selected = Number.isInteger(requested) && requested >= 1 && requested <= images.length ? requested - 1 : 0;
     const view = toView(product, images[selected]);
-    const bulk = (await tiersFor([product.id], db)).get(product.id) ?? [];
-    const maxQty = product.track_stock ? Math.min(product.stock, MAX_QTY) : MAX_QTY;
     const base = `/p/${encodeURIComponent(product.slug)}`;
     const gallery =
       images.length > 1
@@ -169,8 +166,6 @@ export async function shopRoutes(app: FastifyInstance): Promise<void> {
       // free of logic, and never marked safe: nunjucks escapes every paragraph.
       paragraphs: product.description.split(/\n\s*\n/).filter((p) => p.trim() !== ''),
       product: view,
-      bulk: bulk.map((t) => ({ minQty: t.minQty, price: formatMoney(t.priceCents) })),
-      maxQty,
       gallery,
       cartCount: itemCount(readCart(request)),
       csrfToken: view.inStock ? reply.generateCsrf() : undefined,

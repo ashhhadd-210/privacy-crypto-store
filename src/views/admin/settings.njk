@@ -38,26 +38,8 @@
       <label for="f-free_over">Free shipping on orders over</label>
       <input id="f-free_over" name="free_over" type="text" inputmode="decimal" maxlength="12" value="{{ values.free_over }}" placeholder="No free shipping" aria-describedby="h-free_over">
       {% if errors.free_over %}<p class="field-error" id="h-free_over">{{ errors.free_over }}</p>
-      {% else %}<p class="hint" id="h-free_over">When the items in an order, after bulk prices and any discounts, reach this amount, shipping is free. Leave empty to always charge shipping.</p>{% endif %}
+      {% else %}<p class="hint" id="h-free_over">When the items in an order (after any discount code) reach this amount, shipping is free. Leave empty to always charge shipping.</p>{% endif %}
     </div>
-  </fieldset>
-
-  <fieldset>
-    <legend>Discounts by order total</legend>
-    <p class="hint">Orders whose items reach an amount get a percentage off, worked out after any bulk prices. The highest one reached applies. Discount codes still work on top. Leave a row empty to switch it off.</p>
-    {% if errors.spend %}<p class="field-error" role="alert">{{ errors.spend }}</p>{% endif %}
-    {% for row in values.spend %}
-    <div class="tier-row">
-      <div class="field{% if errors.spend %} has-error{% endif %}">
-        <label for="f-spend_over_{{ loop.index }}">Orders of at least</label>
-        <input id="f-spend_over_{{ loop.index }}" name="spend_over_{{ loop.index }}" type="text" inputmode="decimal" maxlength="12" value="{{ row.over }}" placeholder="e.g. {{ [500, 1000, 2000][loop.index0] }}">
-      </div>
-      <div class="field{% if errors.spend %} has-error{% endif %}">
-        <label for="f-spend_pct_{{ loop.index }}">Percent off</label>
-        <input id="f-spend_pct_{{ loop.index }}" name="spend_pct_{{ loop.index }}" type="text" inputmode="numeric" maxlength="4" value="{{ row.pct }}" placeholder="e.g. {{ [10, 20, 25][loop.index0] }}">
-      </div>
-    </div>
-    {% endfor %}
   </fieldset>
 
   <fieldset>

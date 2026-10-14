@@ -28,7 +28,6 @@ import { getDb } from '../lib/db.js';
 import { formatMoney } from '../lib/money.js';
 import { type PricedCart, type PricedLine, priceCart, unchanged } from '../lib/pricing.js';
 import { MAX_CODE_LENGTH, describe, findUsablePromotion, normalizeCode } from '../lib/promo.js';
-import { nextSpendTier, spendTiers } from '../lib/discounts.js';
 import { getSettings } from '../lib/settings.js';
 import { imagesFor } from './shop.js';
 
@@ -81,7 +80,6 @@ export async function lineViews(lines: PricedLine[]) {
       image: image === undefined ? '/placeholder/no-image.svg' : `/${image.path}`,
       imageAlt: image?.alt ?? '',
       unitPrice: formatMoney(l.unitPriceCents),
-      basePrice: l.unitPriceCents < l.basePriceCents ? formatMoney(l.basePriceCents) : null,
       lineTotal: formatMoney(l.lineTotalCents),
       qty: l.qty,
       maxQty: l.maxQty,
@@ -101,11 +99,10 @@ export function summaryView(priced: PricedCart, shippingCents = 0) {
         : {
             code: promo.code,
             label: describe(promo, formatMoney),
-            discountCents: priced.promoDiscountCents,
-            discount: formatMoney(priced.promoDiscountCents),
+            discountCents: priced.discountCents,
+            discount: formatMoney(priced.discountCents),
             shortBy: shortBy > 0 ? formatMoney(shortBy) : null,
           },
-    spend: priced.spendDiscountCents > 0 ? { percent: priced.spendPercent, discount: formatMoney(priced.spendDiscountCents) } : null,
     shipping: formatMoney(shippingCents),
     total: formatMoney(priced.subtotalCents - priced.discountCents + shippingCents),
   };
@@ -129,8 +126,6 @@ export async function cartRoutes(app: FastifyInstance): Promise<void> {
         ? 'This order ships free.'
         : `Free shipping on orders over ${formatMoney(s.free_shipping_over_cents)}: ${formatMoney(s.free_shipping_over_cents - items)} to go.`
       : null;
-    const next = nextSpendTier(spendTiers(s), priced.subtotalCents);
-    const spendHint = next === null ? null : `Spend ${formatMoney(next.overCents - priced.subtotalCents)} more for ${next.percent}% off your order.`;
     return reply.header('cache-control', 'no-store').view('shop/cart.njk', {
       title: 'Your cart',
       bodyClass: 'shop',
@@ -142,7 +137,6 @@ export async function cartRoutes(app: FastifyInstance): Promise<void> {
       ...summaryView(priced),
       maxCodeLength: MAX_CODE_LENGTH,
       freeShipping,
-      spendHint,
     });
   });
 
