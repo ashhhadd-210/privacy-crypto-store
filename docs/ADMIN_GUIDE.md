@@ -42,6 +42,21 @@ Other things you can do on an order:
 order shows "Paid too little" or "Paid too much". Contact the customer, or refund the
 difference, then carry on as normal.
 
+**How an order shows its total.** Every order, in your admin, in the customer's emails and on
+their confirmation and tracking pages, lists each item with its price. When a bulk price applied,
+it says so and shows the normal price crossed out. Under the subtotal, each discount has its own
+line: "Order discount (20%)" for a discount by order total, "Discount code" for a code. Shipping
+says "Free" when the order qualified. Orders placed before 16 Oct show one combined "Discount"
+line, because the breakdown was not recorded then.
+
+**How customers can pay.** On the payment page customers choose:
+- **Bitcoin**, paid straight into your store wallet in Cake Wallet.
+- **ETH, USDC & more**: the customer pays in another coin through the Trocador exchange on the
+  same page, and you receive Bitcoin in Cake Wallet as usual. The customer pays the exchange fee.
+- **Monero** appears once its setup on the payment server finishes; Monero payments go to your
+  own Monero wallet.
+- **Lightning** is installed but switched off until it has a funded payment channel.
+
 ## Products
 
 - **Add a product**: name, description (leave a blank line between paragraphs), price, stock.
