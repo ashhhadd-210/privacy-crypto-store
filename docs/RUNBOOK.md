@@ -118,9 +118,35 @@ commit) to pick up base-image fixes, or update the dependency.
 
 **Cloudflare (Pro).** Security → Security rules: Cloudflare Managed + OWASP Core rulesets; custom
 rule blocking `/webhooks/btcpay` from outside (BTCPay calls the app inside the server); rate limit of
-20 POSTs a minute per IP on `/admin/login`, `/checkout*`, `/order`. Custom rule "Checkout human check": Managed Challenge on `GET /checkout` (the "Verify you are human" box, client request 14 Oct). Super Bot Fight Mode: definitely automated = Allow, JavaScript detections **off** (they inject an inline script the CSP blocks), verified bots on. If the admin ever gets a
+20 POSTs a minute per IP on `/admin/login`, `/checkout*`, `/order`. Custom rule "Hide payment server login": Managed Challenge on `pay.madlabsoil.net` paths `/`, `/login*`, `/register*` (15 Oct, after a Google Safe Browsing false positive; invoice pages `/i/*` stay open). Custom rule "Checkout human check": Managed Challenge on `GET /checkout` (the "Verify you are human" box, client request 14 Oct). Super Bot Fight Mode: definitely automated = Allow, JavaScript detections **off** (they inject an inline script the CSP blocks), verified bots on. If the admin ever gets a
 Cloudflare "blocked" page while saving, add a skip rule for paths starting with `/admin`. SSL/TLS:
 Full (strict), Always Use HTTPS, minimum TLS 1.2.
+
+**Lightning and Monero (added 14 Oct).** Installed with `BTCPAYGEN_LIGHTNING=clightning` and
+`BTCPAYGEN_CRYPTO2=xmr` (settings backup in `/opt/btcpay/.env.bak-*`). Containers:
+`btcpayserver_clightning_bitcoin`, `btcpayserver_monerod` (pruned, ~100 GB when synced),
+`btcpayserver_monero_wallet`. Monero sync: `docker exec btcpayserver_monerod` + `get_info` on port
+18081 (`height` vs `target_height`). Lightning: `docker exec btcpayserver_clightning_bitcoin
+lightning-cli getinfo` / `listfunds`. Lightning holds a small hot balance on the server; it needs
+one inbound channel to receive, and its channel backup must be kept safe.
+
+**Wallet address gap.** Every invoice, paid or not, takes the next address of the client's wallet
+(index 13 by 14 Oct, all from tests and abandoned checkouts). Most wallets look about 20 unused
+addresses ahead. If a payment ever does not show in Cake Wallet, rescan the wallet; the money is
+there and BTCPay already sees it.
+
+**Trocador (ETH, USDC and other coins, added 15 Oct).** BTCPay plugin Trocador 2.1 (client
+approved, hourly). Store, Plugins, Trocador: enabled, not shown first, receives into Bitcoin
+on-chain, name "ETH, USDC & more", preselected USDC (ERC20). Customers pay the exchange fee; the
+store receives BTC in the client's wallet. Invoice expiry should be 120 minutes (Trocador's
+advice). Verified 15 Oct on a $1 test invoice (cancelled). SideShift was rejected: it requires the
+merchant and server to be outside the US.
+
+**Google Safe Browsing flag (15 Oct).** Chrome showed "Dangerous site, phishing" on
+pay.madlabsoil.net (false positive typical of self-hosted BTCPay login pages). Remedy: report at
+safebrowsing.google.com/safebrowsing/report_error, Search Console domain property (TXT in
+Cloudflare) and "Request review"; then put the BTCPay login and admin paths behind Cloudflare
+Access so only invoice pages are public.
 
 ## If something breaks
 

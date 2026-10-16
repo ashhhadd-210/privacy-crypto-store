@@ -12,6 +12,8 @@ import { type Database, getDb } from './db.js';
 
 export interface StoreSettings {
   store_name: string;
+  /** Uploaded logo, relative to public/ (uploads/<random>.webp); empty = placeholder. */
+  logo_path: string;
   currency: string;
   shipping_flat_cents: number;
   /** Orders whose items (after discount) reach this amount ship free. 0 = never. */
@@ -32,6 +34,7 @@ export interface StoreSettings {
 
 export const DEFAULTS: StoreSettings = {
   store_name: '',
+  logo_path: '',
   currency: 'USD',
   shipping_flat_cents: 0,
   free_shipping_over_cents: 0,

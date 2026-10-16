@@ -1,7 +1,7 @@
 <header class="admin-top">
   <div class="admin-top-in">
     <a class="admin-brand" href="/admin">
-      <img src="/placeholder/logo.svg" alt="" width="128" height="32">
+      <img src="{{ logoSrc | default('/placeholder/logo.svg') }}" alt="" width="128" height="32">
       <span class="admin-badge">Admin</span>
     </a>
     <div class="admin-tools">

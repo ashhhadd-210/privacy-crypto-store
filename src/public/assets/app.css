@@ -726,3 +726,8 @@ body.admin .admin-form { max-width: 46rem; }
 .tier-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
 .tier-row .field label { margin-top: .6rem; }
 .bulk-prices { margin-top: 1.25rem; }
+
+/* Logo upload (16 Oct) */
+.logo-card { margin-bottom: 1.25rem; }
+.logo-preview { display: inline-flex; align-items: center; padding: .9rem 1.1rem; margin: 0 0 .75rem; border: 1px dashed var(--line-2); border-radius: 12px; background: var(--bg-2); }
+.logo-preview img { display: block; height: 2.25rem; width: auto; }

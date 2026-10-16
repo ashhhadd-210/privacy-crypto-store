@@ -77,6 +77,9 @@ return policy. This text is a starting point, not legal advice.
 
 ## Settings
 
+- **Logo**: upload your logo at the top of Settings (PNG, JPEG or WebP; a wide PNG with a
+  transparent background works best). It shows at the top and bottom of every page. Upload a
+  new one any time, or remove it to go back to the placeholder.
 - **Store name**, **flat shipping** (0 for free shipping) and **free shipping on orders over** an
   amount (empty for never).
 - **Discounts by order total**: see Discount codes above.

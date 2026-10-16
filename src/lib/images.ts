@@ -59,6 +59,32 @@ export async function processProductImage(input: Buffer): Promise<Buffer> {
   }
 }
 
+/**
+ * The store logo: same checks as a product photo, but transparency is kept
+ * (lossless WebP) and it is sized for a header rather than a product page.
+ */
+export async function processLogoImage(input: Buffer): Promise<Buffer> {
+  if (input.length === 0) throw new ImageRejected('empty');
+  if (input.length > MAX_UPLOAD_BYTES) throw new ImageRejected('too-big');
+  let format: string | undefined;
+  try {
+    format = (await sharp(input, { limitInputPixels: MAX_INPUT_PIXELS }).metadata()).format;
+  } catch {
+    throw new ImageRejected('type');
+  }
+  if (format === 'heif') throw new ImageRejected('heic');
+  if (format === undefined || !ACCEPTED.has(format)) throw new ImageRejected('type');
+  try {
+    return await sharp(input, { limitInputPixels: MAX_INPUT_PIXELS, failOn: 'error' })
+      .rotate()
+      .resize({ width: 800, height: 240, fit: 'inside', withoutEnlargement: true })
+      .webp({ lossless: true })
+      .toBuffer();
+  } catch {
+    throw new ImageRejected('unreadable');
+  }
+}
+
 /** Writes a processed photo under a random name; returns its path relative to public/. */
 export async function storeProductImage(processed: Buffer): Promise<string> {
   await mkdir(UPLOAD_DIR, { recursive: true });

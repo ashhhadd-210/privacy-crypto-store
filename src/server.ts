@@ -44,6 +44,7 @@ import { accountRoutes } from './routes/account.js';
 import { healthRoutes } from './routes/health.js';
 import { shopRoutes } from './routes/shop.js';
 import { THEME_COOKIE, themeFrom, themeRoutes } from './routes/theme.js';
+import { adminLogoRoutes } from './routes/admin-logo.js';
 
 
 /**
@@ -180,6 +181,7 @@ export async function buildServer() {
     const settings = await getSettings();
     reply.locals = {
       storeName: settings.store_name || 'Store',
+      logoSrc: settings.logo_path ? `/${settings.logo_path}` : '/placeholder/logo.svg',
       theme: themeFrom(request.cookies[THEME_COOKIE]),
       here: request.url,
     };
@@ -249,6 +251,7 @@ export async function buildServer() {
   await app.register(lookupRoutes);
   await app.register(accountRoutes);
   await app.register(themeRoutes);
+  await app.register(adminLogoRoutes);
 
   return app;
 }

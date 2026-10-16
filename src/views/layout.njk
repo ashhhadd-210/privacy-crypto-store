@@ -27,7 +27,7 @@
   <header class="site-bar">
     <div class="site-bar-in">
       <a class="brand" href="/">
-        <img class="brand-logo" src="/placeholder/logo.svg" alt="{{ storeName }}" width="160" height="40">
+        <img class="brand-logo" src="{{ logoSrc | default('/placeholder/logo.svg') }}" alt="{{ storeName }}" width="160" height="40">
       </a>
       <nav class="site-links" aria-label="Store">
         <a href="/">Shop</a>
@@ -57,7 +57,7 @@
     <div class="site-foot-in">
       <div class="foot-grid">
         <div class="foot-brand">
-          <img src="/placeholder/logo.svg" alt="" width="160" height="40" loading="lazy">
+          <img src="{{ logoSrc | default('/placeholder/logo.svg') }}" alt="" width="160" height="40" loading="lazy">
           <p>Paid in Bitcoin. Your name, email and address are encrypted the moment you order and erased automatically once it is done. No analytics, no ads, nothing loaded from anyone else.</p>
         </div>
         <nav class="foot-col" aria-label="Shop">

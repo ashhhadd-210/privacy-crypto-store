@@ -8,6 +8,25 @@
 {% if purged is defined and purged != null %}<p class="notice" role="status">Purge finished: {{ purged }} order{% if purged != '1' %}s{% endif %} cleared of personal details.</p>{% endif %}
 {% if hasErrors %}<p class="error" role="alert">Nothing was saved. Please fix the highlighted fields.</p>{% endif %}
 
+<section class="card-flat narrow logo-card" id="logo">
+  <h2>Logo</h2>
+  {% if logoMessage %}<p class="{% if logoMessage.error %}error{% else %}notice{% endif %}" role="status">{{ logoMessage.text }}</p>{% endif %}
+  <div class="logo-preview"><img src="{{ logoSrc | default('/placeholder/logo.svg') }}" alt="Current logo" width="160" height="40"></div>
+  <form method="post" action="/admin/settings/logo" enctype="multipart/form-data" class="upload-form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <label for="f-logo">Upload a new logo</label>
+    <input id="f-logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp" required>
+    <p class="hint">PNG, JPEG or WebP, up to 10 MB. A wide PNG with a transparent background works best, in a colour that reads on both light and dark backgrounds. Shown at the top and bottom of every page.</p>
+    <button type="submit">Upload logo</button>
+  </form>
+  {% if hasLogo %}
+  <form method="post" action="/admin/settings/logo/remove">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <button type="submit" class="link danger">Remove logo and use the placeholder</button>
+  </form>
+  {% endif %}
+</section>
+
 <form method="post" action="/admin/settings" class="admin-form" novalidate>
   <input type="hidden" name="_csrf" value="{{ csrfToken }}">
 

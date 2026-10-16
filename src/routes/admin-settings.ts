@@ -15,6 +15,7 @@ import { parsePrice, priceInput } from '../lib/product-form.js';
 import { runPurge } from '../lib/retention.js';
 import { type StoreSettings, getSettings, saveSettings } from '../lib/settings.js';
 import { requireAdmin } from './admin.js';
+import { LOGO_MESSAGES } from './admin-logo.js';
 
 type SpendRow = { over: string; pct: string };
 type Values = { spend: SpendRow[]; store_name: string; currency: string; shipping: string; free_over: string; retention_days: string; complete_after_days: string; purge_enabled: boolean; export_before_purge: boolean };
@@ -146,11 +147,14 @@ export async function adminSettingsRoutes(app: FastifyInstance): Promise<void> {
       });
   }
 
-  app.get<{ Querystring: { saved?: string; purged?: string } }>('/admin/settings', guard, async (request, reply) => {
+  app.get<{ Querystring: { saved?: string; purged?: string; logo?: string } }>('/admin/settings', guard, async (request, reply) => {
     const s = await getSettings(db);
+    const code = request.query.logo;
     return render(reply, toValues(s), {}, {
       saved: request.query.saved === '1',
       purged: request.query.purged,
+      hasLogo: s.logo_path !== '',
+      logoMessage: code !== undefined && Object.hasOwn(LOGO_MESSAGES, code) ? LOGO_MESSAGES[code] : undefined,
     });
   });
 
