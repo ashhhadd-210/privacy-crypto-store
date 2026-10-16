@@ -23,6 +23,7 @@ import { requireAdmin } from './admin.js';
 import { invalidateInvoice } from '../lib/btcpay.js';
 import { enqueueEmail, processOutbox } from '../lib/mailer.js';
 import { emitOrderEvent } from '../lib/order-events.js';
+import { ORDER_ITEM_COLUMNS, ORDER_SUMMARY_COLUMNS, itemView, totalsView } from '../lib/order-view.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -127,7 +128,7 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
     if (o === undefined) return reply.callNotFound();
     const items = await db
       .selectFrom('order_items')
-      .select(['name_snapshot', 'quantity', 'unit_price_cents', 'line_total_cents'])
+      .select([...ORDER_ITEM_COLUMNS])
       .where('order_id', '=', o.id)
       .execute();
 
@@ -167,15 +168,8 @@ export async function adminOrderRoutes(app: FastifyInstance): Promise<void> {
         name: decrypt(o.name_enc, 'orders.name'),
         email: decrypt(o.email_enc, 'orders.email'),
         address: decryptAddress(o.address_enc),
-        items: items.map((i) => ({
-          name: i.name_snapshot,
-          qty: i.quantity,
-          unit: formatMoney(i.unit_price_cents),
-          total: formatMoney(i.line_total_cents),
-        })),
-        subtotal: formatMoney(o.subtotal_cents),
-        discount: o.discount_cents > 0 ? formatMoney(o.discount_cents) : null,
-        shipping: formatMoney(o.shipping_cents),
+        items: items.map(itemView),
+        totals: totalsView(o),
         total: formatMoney(o.total_cents),
         canShip: o.status === 'paid',
         canComplete: o.status === 'shipped',

@@ -14,6 +14,7 @@ import { closeDb, getDb } from '../lib/db.js';
 import { hashPassword } from '../lib/session.js';
 import { getSettings, invalidateSettings, saveSettings } from '../lib/settings.js';
 import { Visitor } from '../test/visitor.js';
+import { render } from '../lib/mailer.js';
 
 type App = Awaited<ReturnType<typeof buildServer>>;
 
@@ -206,4 +207,48 @@ test('order-total discounts that make no sense are refused', async () => {
   }
   invalidateSettings();
   assert.equal((await getSettings()).spend1_over_cents, before.spend1_over_cents);
+});
+
+test('a placed order records and shows how its total was reached', async () => {
+  const db = getDb();
+  const slug = `settings-breakdown-${RUN}`;
+  const product = await db.insertInto('products').values({ slug, name: 'Breakdown Probe', price_cents: 60_000, stock: 50, active: true }).returning('id').executeTakeFirstOrThrow();
+  await db.insertInto('product_price_tiers').values({ product_id: product.id, min_qty: 10, price_cents: 50_000 }).execute();
+  const tokens: string[] = [];
+  try {
+    await admin.post('/admin/settings', FORM(SPEND_ON)); // $5000 → 10%, $8000 → 20%; shipping 0
+    invalidateSettings();
+    const shopper = new Visitor(app, `/p/${slug}`);
+    await shopper.add(slug, 12); // 12 x $500 bulk = $6000 → 10% order discount
+    const page = await shopper.get('/checkout');
+    const csrf = /name="_csrf" value="([^"]+)"/.exec(page.body)?.[1] ?? '';
+    const token = /name="token" value="([^"]+)"/.exec(page.body)?.[1] ?? '';
+    const expectedTotal = /name="expectedTotal" value="([^"]+)"/.exec(page.body)?.[1] ?? '';
+    tokens.push(token);
+    await shopper.post('/checkout', { _csrf: csrf, token, expectedTotal, name: 'Breakdown Probe', email: `breakdown.${RUN}@example.com`, line1: '1 Probe Road', city: 'Probeton', postcode: '12345', country: 'United States' });
+
+    const order = await db.selectFrom('orders').selectAll().where('checkout_token', '=', token).executeTakeFirstOrThrow();
+    assert.deepEqual(
+      [order.subtotal_cents, order.order_discount_percent, order.order_discount_cents, order.code_discount_cents, order.discount_cents, order.total_cents],
+      [600_000, 10, 60_000, 0, 60_000, 540_000],
+    );
+    const item = await db.selectFrom('order_items').select(['unit_price_cents', 'base_price_cents']).where('order_id', '=', order.id).executeTakeFirstOrThrow();
+    assert.deepEqual([item.unit_price_cents, item.base_price_cents], [50_000, 60_000]);
+
+    const done = (await shopper.get('/checkout/done')).body;
+    assert.match(done, /\$500\.00 each, bulk price <s>\$600\.00<\/s>/);
+    assert.match(done, /Order discount \(10%\)<\/span> <span>&minus;\$600\.00/);
+    assert.match(done, /Shipping<\/span> <span>Free/);
+    assert.match(done, /Total<\/span> <strong>\$5,400\.00/);
+
+    const email = await render(db, order.id, 'received');
+    assert.ok(email);
+    assert.match(email.text, /12 x Breakdown Probe \(\$500\.00 each, bulk price; normally \$600\.00\)/);
+    assert.match(email.text, /Order discount \(10%\)  -\$600\.00/);
+  } finally {
+    await admin.post('/admin/settings', FORM(SPEND_OFF));
+    invalidateSettings();
+    if (tokens.length) await db.deleteFrom('orders').where('checkout_token', 'in', tokens).execute();
+    await db.deleteFrom('products').where('slug', '=', slug).execute();
+  }
 });

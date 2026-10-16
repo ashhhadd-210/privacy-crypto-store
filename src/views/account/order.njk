@@ -14,15 +14,7 @@
   </form>
   {% endif %}
 
-  <ul class="summary-lines">
-    {% for i in order.items %}
-    <li><span>{{ i.name }} <span class="muted-inline">&times; {{ i.qty }}</span></span> <span>{{ i.total }}</span></li>
-    {% endfor %}
-  </ul>
-  <p class="cart-row"><span>Subtotal</span> <span>{{ order.subtotal }}</span></p>
-  {% if order.discount %}<p class="cart-row"><span>Discount</span> <span>&minus;{{ order.discount }}</span></p>{% endif %}
-  <p class="cart-row"><span>Shipping</span> <span>{{ order.shipping }}</span></p>
-  <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ order.total }}</strong></p>
+  {% set summary = order.summary %}{% include "shop/_order_summary.njk" %}
   <p class="muted small-print">For your privacy, the delivery address is not shown here.</p>
 </div>
 {% endblock %}

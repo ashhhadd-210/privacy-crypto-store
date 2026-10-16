@@ -1,0 +1,5 @@
+{# Totals with each discount named. Needs `summary.totals`. #}
+<p class="cart-row"><span>Subtotal</span> <span>{{ summary.totals.subtotal }}</span></p>
+{% for d in summary.totals.discounts %}<p class="cart-row"><span>{{ d.label }}</span> <span>&minus;{{ d.amount }}</span></p>{% endfor %}
+<p class="cart-row"><span>Shipping</span> <span>{{ summary.totals.shipping }}</span></p>
+<p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ summary.totals.total }}</strong></p>

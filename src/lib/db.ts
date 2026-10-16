@@ -123,6 +123,9 @@ export interface OrdersTable {
   phone_enc: Buffer | null;
   subtotal_cents: number;
   discount_cents: Generated<number>;
+  order_discount_cents: Generated<number>;
+  order_discount_percent: Generated<number>;
+  code_discount_cents: Generated<number>;
   shipping_cents: Generated<number>;
   total_cents: number;
   currency: Generated<string>;
@@ -145,6 +148,8 @@ export interface OrderItemsTable {
   product_id: string | null;
   name_snapshot: string;
   unit_price_cents: number;
+  /** Normal price when a bulk price applied; null otherwise (and on older orders). */
+  base_price_cents: number | null;
   quantity: number;
   line_total_cents: number;
 }

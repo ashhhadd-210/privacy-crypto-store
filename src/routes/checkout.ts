@@ -37,6 +37,7 @@ import { ensureInvoice } from '../lib/payments.js';
 import { STATUS } from './lookup.js';
 import { getSettings, shippingFor } from '../lib/settings.js';
 import { lineViews, summaryView } from './cart.js';
+import { ORDER_ITEM_COLUMNS, ORDER_SUMMARY_COLUMNS, itemView, totalsView } from '../lib/order-view.js';
 
 const ORDER_COOKIE = 'order';
 
@@ -204,6 +205,9 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
               phone_enc: null,
               subtotal_cents: priced.subtotalCents,
               discount_cents: discount,
+              order_discount_cents: priced.spendDiscountCents,
+              order_discount_percent: priced.spendPercent,
+              code_discount_cents: priced.promoDiscountCents,
               shipping_cents: shipping,
               total_cents: priced.subtotalCents - discount + shipping,
               promotion_id: priced.promotion?.id ?? null,
@@ -232,6 +236,7 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
                 product_id: l.productId,
                 name_snapshot: l.name,
                 unit_price_cents: l.unitPriceCents,
+                base_price_cents: l.unitPriceCents < l.basePriceCents ? l.basePriceCents : null,
                 quantity: l.qty,
                 line_total_cents: l.lineTotalCents,
               })),
@@ -275,14 +280,14 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
 
     const order = await db
       .selectFrom('orders')
-      .select(['id', 'order_number', 'status', 'subtotal_cents', 'discount_cents', 'shipping_cents', 'total_cents'])
+      .select(['id', 'order_number', 'status', ...ORDER_SUMMARY_COLUMNS])
       .where('id', '=', unsigned.value)
       .executeTakeFirst();
     if (order === undefined) return reply.redirect('/', 303);
 
     const items = await db
       .selectFrom('order_items')
-      .select(['name_snapshot', 'quantity', 'line_total_cents'])
+      .select([...ORDER_ITEM_COLUMNS])
       .where('order_id', '=', order.id)
       .execute();
 
@@ -298,10 +303,7 @@ export async function checkoutRoutes(app: FastifyInstance): Promise<void> {
       detail: STATUS[order.status]?.detail ?? '',
       canPay: order.status === 'pending',
       payUnavailable: request.query.pay === 'unavailable',
-      items: items.map((i) => ({ name: i.name_snapshot, qty: i.quantity, total: formatMoney(i.line_total_cents) })),
-      subtotal: formatMoney(order.subtotal_cents),
-      discount: order.discount_cents > 0 ? formatMoney(order.discount_cents) : null,
-      shipping: formatMoney(order.shipping_cents),
+      summary: { items: items.map(itemView), totals: totalsView(order) },
       total: formatMoney(order.total_cents),
     });
   });

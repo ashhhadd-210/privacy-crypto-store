@@ -34,6 +34,7 @@ import { getDb } from '../lib/db.js';
 import { formatMoney } from '../lib/money.js';
 import { FINAL_STATES, recordPurgeRun, wipeOrder } from '../lib/retention.js';
 import { STATUS } from './lookup.js';
+import { ORDER_ITEM_COLUMNS, ORDER_SUMMARY_COLUMNS, itemView, totalsView } from '../lib/order-view.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -166,14 +167,14 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
     const me = request.customer as Customer;
     const o = await db
       .selectFrom('orders')
-      .select(['id', 'order_number', 'status', 'subtotal_cents', 'discount_cents', 'shipping_cents', 'total_cents', 'tracking_number', 'placed_at'])
+      .select(['id', 'order_number', 'status', ...ORDER_SUMMARY_COLUMNS, 'tracking_number', 'placed_at'])
       .where('id', '=', request.params.id)
       .where('customer_id', '=', me.id) // in the query: another customer's order is a 404, not a 403
       .executeTakeFirst();
     if (o === undefined) return reply.callNotFound();
     const items = await db
       .selectFrom('order_items')
-      .select(['name_snapshot', 'quantity', 'line_total_cents'])
+      .select([...ORDER_ITEM_COLUMNS])
       .where('order_id', '=', o.id)
       .execute();
     const status = STATUS[o.status] ?? { label: o.status, detail: '' };
@@ -187,10 +188,7 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
         status: status.label,
         detail: status.detail,
         tracking: o.status === 'shipped' || o.status === 'complete' ? o.tracking_number : null,
-        items: items.map((i) => ({ name: i.name_snapshot, qty: i.quantity, total: formatMoney(i.line_total_cents) })),
-        subtotal: formatMoney(o.subtotal_cents),
-        discount: o.discount_cents > 0 ? formatMoney(o.discount_cents) : null,
-        shipping: formatMoney(o.shipping_cents),
+        summary: { items: items.map(itemView), totals: totalsView(o) },
         total: formatMoney(o.total_cents),
       },
     });

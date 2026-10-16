@@ -1,0 +1,12 @@
+{# One order summary for every page that shows an order. Needs `summary` = { items, totals }. #}
+<ul class="summary-lines">
+  {% for i in summary.items %}
+  <li>
+    <span>{{ i.name }} <span class="muted-inline">&times; {{ i.qty }}</span>
+      {% if i.normally %}<span class="summary-note">{{ i.unit }} each, bulk price <s>{{ i.normally }}</s></span>{% endif %}
+    </span>
+    <span>{{ i.total }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% include "shop/_order_totals.njk" %}

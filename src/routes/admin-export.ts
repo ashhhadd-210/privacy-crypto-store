@@ -56,7 +56,7 @@ export async function adminExportRoutes(app: FastifyInstance): Promise<void> {
     const orders = await db.selectFrom('orders').selectAll().orderBy('placed_at').execute();
     const items = await db
       .selectFrom('order_items')
-      .select(['order_id', 'name_snapshot', 'unit_price_cents', 'quantity', 'line_total_cents'])
+      .select(['order_id', 'name_snapshot', 'unit_price_cents', 'base_price_cents', 'quantity', 'line_total_cents'])
       .execute();
     const byOrder = new Map<string, typeof items>();
     for (const i of items) byOrder.set(i.order_id, [...(byOrder.get(i.order_id) ?? []), i]);
@@ -82,9 +82,12 @@ export async function adminExportRoutes(app: FastifyInstance): Promise<void> {
           email: decrypt(o.email_enc, 'orders.email'),
           address: decryptAddress(o.address_enc),
         },
-        items: (byOrder.get(o.id) ?? []).map((i) => ({ name: i.name_snapshot, unit_price: i.unit_price_cents, quantity: i.quantity, line_total: i.line_total_cents })),
+        items: (byOrder.get(o.id) ?? []).map((i) => ({ name: i.name_snapshot, unit_price: i.unit_price_cents, normal_price: i.base_price_cents, quantity: i.quantity, line_total: i.line_total_cents })),
         subtotal: o.subtotal_cents,
         discount: o.discount_cents,
+        order_discount: o.order_discount_cents,
+        order_discount_percent: o.order_discount_percent,
+        code_discount: o.code_discount_cents,
         shipping: o.shipping_cents,
         total: o.total_cents,
         staff_note: o.admin_note,

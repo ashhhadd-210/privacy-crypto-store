@@ -18,6 +18,7 @@ import { blindIndex } from '../lib/crypto.js';
 import { itemCount, readCart } from '../lib/cart.js';
 import { getDb } from '../lib/db.js';
 import { formatMoney } from '../lib/money.js';
+import { ORDER_ITEM_COLUMNS, ORDER_SUMMARY_COLUMNS, itemView, totalsView } from '../lib/order-view.js';
 
 export const STATUS: Record<string, { label: string; detail: string }> = {
   pending: { label: 'Awaiting payment', detail: 'We have your order. It will be prepared once the Bitcoin payment is confirmed.' },
@@ -71,7 +72,7 @@ export async function lookupRoutes(app: FastifyInstance): Promise<void> {
       const number = parsed.data.number.toUpperCase();
       const order = await db
         .selectFrom('orders')
-        .select(['id', 'order_number', 'status', 'subtotal_cents', 'discount_cents', 'shipping_cents', 'total_cents', 'tracking_number', 'placed_at'])
+        .select(['id', 'order_number', 'status', ...ORDER_SUMMARY_COLUMNS, 'tracking_number', 'placed_at'])
         .where('order_number', '=', number)
         .where('email_bidx', '=', blindIndex(parsed.data.email, 'orders.email'))
         .executeTakeFirst();
@@ -81,7 +82,7 @@ export async function lookupRoutes(app: FastifyInstance): Promise<void> {
 
       const items = await db
         .selectFrom('order_items')
-        .select(['name_snapshot', 'quantity', 'line_total_cents'])
+        .select([...ORDER_ITEM_COLUMNS])
         .where('order_id', '=', order.id)
         .execute();
 
@@ -97,10 +98,7 @@ export async function lookupRoutes(app: FastifyInstance): Promise<void> {
           statusKey: order.status,
           detail: status.detail,
           tracking: order.status === 'shipped' || order.status === 'complete' ? order.tracking_number : null,
-          items: items.map((i) => ({ name: i.name_snapshot, qty: i.quantity, total: formatMoney(i.line_total_cents) })),
-          subtotal: formatMoney(order.subtotal_cents),
-          discount: order.discount_cents > 0 ? formatMoney(order.discount_cents) : null,
-          shipping: formatMoney(order.shipping_cents),
+          summary: { items: items.map(itemView), totals: totalsView(order) },
           total: formatMoney(order.total_cents),
         },
       });

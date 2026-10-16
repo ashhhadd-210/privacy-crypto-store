@@ -21,15 +21,7 @@
     </form>
   {% endif %}
 
-  <ul class="summary-lines">
-    {% for i in items %}
-    <li><span>{{ i.name }} <span class="muted-inline">&times; {{ i.qty }}</span></span> <span>{{ i.total }}</span></li>
-    {% endfor %}
-  </ul>
-  <p class="cart-row"><span>Subtotal</span> <span>{{ subtotal }}</span></p>
-  {% if discount %}<p class="cart-row"><span>Discount</span> <span>&minus;{{ discount }}</span></p>{% endif %}
-  <p class="cart-row"><span>Shipping</span> <span>{{ shipping }}</span></p>
-  <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ total }}</strong></p>
+  {% include "shop/_order_summary.njk" %}
 </div>
 
 {% endblock %}

@@ -49,15 +49,12 @@
     <thead><tr><th scope="col">Product</th><th scope="col">Each</th><th scope="col">Qty</th><th scope="col">Total</th></tr></thead>
     <tbody>
       {% for i in order.items %}
-      <tr><td>{{ i.name }}</td><td>{{ i.unit }}</td><td>{{ i.qty }}</td><td>{{ i.total }}</td></tr>
+      <tr><td>{{ i.name }}</td><td>{{ i.unit }}{% if i.normally %}<br><span class="muted-inline">bulk price, normally {{ i.normally }}</span>{% endif %}</td><td>{{ i.qty }}</td><td>{{ i.total }}</td></tr>
       {% endfor %}
     </tbody>
   </table>
   <div class="cart-summary">
-    <p class="cart-row"><span>Subtotal</span> <span>{{ order.subtotal }}</span></p>
-    {% if order.discount %}<p class="cart-row"><span>Discount</span> <span>&minus;{{ order.discount }}</span></p>{% endif %}
-    <p class="cart-row"><span>Shipping</span> <span>{{ order.shipping }}</span></p>
-    <p class="cart-subtotal cart-grand"><span>Total</span> <strong>{{ order.total }}</strong></p>
+    {% set summary = { totals: order.totals } %}{% include "shop/_order_totals.njk" %}
   </div>
 </section>
 

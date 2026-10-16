@@ -16,6 +16,7 @@ import type { Kysely } from 'kysely';
 import { decrypt } from './crypto.js';
 import type { Database } from './db.js';
 import { formatMoney } from './money.js';
+import { ORDER_ITEM_COLUMNS, ORDER_SUMMARY_COLUMNS, textLines, textTotals } from './order-view.js';
 import { getSettings } from './settings.js';
 
 export type EmailKind = 'received' | 'paid' | 'shipped';
@@ -61,26 +62,21 @@ async function getTransport(): Promise<Transport | null> {
 export async function render(db: Kysely<Database>, orderId: string, kind: EmailKind): Promise<Message | null> {
   const o = await db
     .selectFrom('orders')
-    .select(['order_number', 'email_enc', 'total_cents', 'subtotal_cents', 'discount_cents', 'shipping_cents', 'tracking_number'])
+    .select(['order_number', 'email_enc', ...ORDER_SUMMARY_COLUMNS, 'tracking_number'])
     .where('id', '=', orderId)
     .executeTakeFirst();
   if (o === undefined) return null;
   const items = await db
     .selectFrom('order_items')
-    .select(['name_snapshot', 'quantity', 'line_total_cents'])
+    .select([...ORDER_ITEM_COLUMNS])
     .where('order_id', '=', orderId)
     .execute();
   const s = await getSettings(db);
   const store = s.store_name || 'the store';
   const base = (process.env['PUBLIC_URL'] ?? '').replace(/\/+$/, '');
 
-  const lines = items.map((i) => `  ${i.quantity} x ${i.name_snapshot}  ${formatMoney(i.line_total_cents)}`).join('\n');
-  const totals = [
-    `  Subtotal  ${formatMoney(o.subtotal_cents)}`,
-    ...(o.discount_cents > 0 ? [`  Discount  -${formatMoney(o.discount_cents)}`] : []),
-    `  Shipping  ${formatMoney(o.shipping_cents)}`,
-    `  Total     ${formatMoney(o.total_cents)}`,
-  ].join('\n');
+  const lines = textLines(items);
+  const totals = textTotals(o);
   const footer =
     `Check your order any time at ${base}/order with your order number and this email address.\n\n` +
     `Your details are encrypted and deleted automatically after ${s.retention_days} days.\n${store}`;
