@@ -64,7 +64,7 @@ export const productForm = z.object({
     return cents;
   }),
   stock: z.coerce
-    .number({ invalid_type_error: 'Enter a whole number.' })
+    .number({ error: 'Enter a whole number.' })
     .int('Enter a whole number.')
     .min(0, 'Stock cannot be negative.')
     .max(1_000_000, 'That is more stock than the shop can count.'),
