@@ -78,7 +78,9 @@ export async function createInvoice(opts: {
     currency: opts.currency,
     // Only our own ids go to BTCPay: never a name, an email or an address.
     metadata: { orderId: opts.orderId, orderNumber: opts.orderNumber },
-    checkout: { redirectURL: opts.redirectUrl, redirectAutomatically: true, expirationMinutes: 60 },
+    // No expirationMinutes: the store's own setting in BTCPay applies (120 minutes, so a coin
+    // swap through Trocador has time to arrive), and the owner can change it there.
+    checkout: { redirectURL: opts.redirectUrl, redirectAutomatically: true },
   });
   return { ...inv, checkoutLink: publicLink(inv.checkoutLink) };
 }

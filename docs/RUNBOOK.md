@@ -142,6 +142,17 @@ store receives BTC in the client's wallet. Invoice expiry should be 120 minutes 
 advice). Verified 15 Oct on a $1 test invoice (cancelled). SideShift was rejected: it requires the
 merchant and server to be outside the US.
 
+**Payment tolerance 1% (21 Oct).** The client's first real test (USDC on Base through ChangeNOW)
+arrived 0.44% short: the swap's Bitcoin amount is an estimate at a floating rate. With BTCPay's
+tolerance at 0% the invoice expired PaidPartial and the order showed "Paid too little". Set in
+BTCPay: Store, Settings, Payment, "Consider the invoice paid even if the paid amount is ... %
+less than expected" = 1. It applies to invoices created afterwards. For an older short invoice:
+Invoices, open it, Mark as settled; BTCPay sends InvoiceSettled and the store marks the order
+paid (`applyPaymentEvent`, settled from pending or expired). A customer cannot top up a few
+cents through Trocador: its button always asks for the full invoice amount.
+Invoice expiry: the store used to force 60 minutes on every invoice; since 24 Oct it sets none,
+so BTCPay's store setting applies (120 minutes, Store, Settings, Payment).
+
 **Google Safe Browsing flag (15 Oct).** Chrome showed "Dangerous site, phishing" on
 pay.madlabsoil.net (false positive typical of self-hosted BTCPay login pages). Remedy: report at
 safebrowsing.google.com/safebrowsing/report_error, Search Console domain property (TXT in

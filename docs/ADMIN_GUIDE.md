@@ -38,9 +38,12 @@ Other things you can do on an order:
 - **Staff note**: only you see it. Do not put customer details in it; notes are kept after the
   order's personal details are deleted.
 
-**Payments for the wrong amount.** Bitcoin payments are sometimes a little under or over. The
-order shows "Paid too little" or "Paid too much". Contact the customer, or refund the
-difference, then carry on as normal.
+**Payments for the wrong amount.** A payment up to 1% short counts as paid in full, because
+exchange rates move a little while a payment is on its way (most often with ETH and USDC). The
+1% is set on the payment server: your store, Settings, Payment. Anything further off shows
+"Paid too little" or "Paid too much". To accept a short payment anyway, open the invoice on the
+payment server and choose *Mark as settled*: the order turns to paid and the customer is
+emailed. Otherwise contact the customer, or refund the difference.
 
 **How an order shows its total.** Every order, in your admin, in the customer's emails and on
 their confirmation and tracking pages, lists each item with its price. When a bulk price applied,
